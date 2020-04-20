@@ -189,7 +189,7 @@ df_per_k = df.apply(lambda col: col * 1_000.0 / POPULATION[col.name])
 #               #   y='Número de casos confirmados (escala logarítmica)')
 #               y=plot_df['Total'])
 
-date_day = 19
+date_day = 20
 
 
 def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
