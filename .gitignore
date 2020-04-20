@@ -1,4 +1,6 @@
 venv/
+covid_env/
+
 
 *.ipynb
 .ipynb_checkpoints

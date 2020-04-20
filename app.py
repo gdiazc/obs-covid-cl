@@ -16,7 +16,7 @@ from dash.dependencies import Input, Output
 
 external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css']
 
-dash_app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+dash_app = dash.Dash(__name__, external_stylesheets=[dbc.themes.CERULEAN])
 dash_app.title = 'obs-covid chile'
 
 app = dash_app.server
@@ -214,7 +214,8 @@ def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB
             'title': yaxis_title,
             'type': yaxis_type
         },
-        'height': 520
+        'height': 520,
+        'margin': {'l': 0, 'r': 0}
     }
     return fig
 
@@ -264,7 +265,7 @@ def make_fig2():
         'title': f'Evolución de casos confirmados por región ({date_day} abril)',
         'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
         'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
-        'height': 520
+        'height': 520,
     }
     return fig
 
@@ -291,7 +292,7 @@ def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_H
             'title': yaxis_title,
             'type': yaxis_type
         },
-        'height': 520
+        'height': 520,
     }
     return fig
 
@@ -399,7 +400,7 @@ def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
     return fig
 
 
-dash_app.layout = html.Div(className='container', children=[
+dash_app.layout = html.Div(children=[
     html.H1(children='obs-covid chile'),
 
     dcc.Markdown(children='''
@@ -441,40 +442,56 @@ dash_app.layout = html.Div(className='container', children=[
         tests_today_string=f'`{int(REPORT["tests_today"])}`',
         tests_diff_string='`' + str(abs(int(REPORT['tests_diff']))) + ('` más' if REPORT['tests_diff'] > 0 else '` menos') + ' que ayer',
     )),
+    dbc.Row(
+        dbc.Col(
+            html.H2(id='h2_fallecidos_cumulativo_t', className='mt-4',
+                    children='Gráfico 1. Muertes acumuladas por región'),
+            width={"size": 6, "offset": 3},
+        ),
+    ),
+    dbc.Row(
+        dbc.Col(
+            # dcc.Markdown('''
+            #     Opciones:
+            # '''),
 
-    html.H2(id='h2_fallecidos_cumulativo_t', className='mt-4',
-            children='Gráfico 1. Muertes acumuladas por región'),
+            dbc.Form(inline=True, children=[
+                # dbc.FormGroup(className="mr-3", children=[
+                #     dcc.RadioItems(
+                #         id='graph_fallecidos_cumulativo_t-yaxis-type',
+                #         className='form-check form-check-inline',
+                #         options=[{'label': i, 'value': i} for i in ['Lineal', 'Logarítmico']],
+                #         value='Lineal',
+                #         labelStyle={'display': 'inline-block'},
+                #         labelClassName='form-check-label mr-2'
+                #     )
+                # ]),
+                dbc.FormGroup(className="mr-3", children=[
+                    dcc.RadioItems(
+                        id='graph_fallecidos_cumulativo_t-value-type',
+                        className='form-check form-check-inline',
+                        options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
+                        value=POR_MIL_HAB,
+                        labelStyle={'display': 'inline-block'},
+                        labelClassName='form-check-label mr-2'
+                    )
+                ])
+            ]),
+            width={"size": 6, "offset": 3},
+        ),
 
-    dcc.Markdown('''
-        Opciones:
-    '''),
+    ),
 
-    dbc.Form(inline=True, children=[
-        # dbc.FormGroup(className="mr-3", children=[
-        #     dcc.RadioItems(
-        #         id='graph_fallecidos_cumulativo_t-yaxis-type',
-        #         className='form-check form-check-inline',
-        #         options=[{'label': i, 'value': i} for i in ['Lineal', 'Logarítmico']],
-        #         value='Lineal',
-        #         labelStyle={'display': 'inline-block'},
-        #         labelClassName='form-check-label mr-2'
-        #     )
-        # ]),
-        dbc.FormGroup(className="mr-3", children=[
-            dcc.RadioItems(
-                id='graph_fallecidos_cumulativo_t-value-type',
-                className='form-check form-check-inline',
-                options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
-                value=POR_MIL_HAB,
-                labelStyle={'display': 'inline-block'},
-                labelClassName='form-check-label mr-2'
-            )
-        ])
-    ]),
 
-    dcc.Graph(
-        id='graph_fallecidos_cumulativo_t',
-        figure=make_fig_fallecidos_cumulativo_t()
+
+    dbc.Row(
+        dbc.Col(
+            dcc.Graph(
+                id='graph_fallecidos_cumulativo_t',
+                figure=make_fig_fallecidos_cumulativo_t()
+            ),
+            width=12
+        )
     ),
 
     html.H2(className='mt-4', children='Gráfico 2. Casos confirmados acumulados por región'),
