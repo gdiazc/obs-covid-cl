@@ -1,15 +1,14 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
-import os
+# import os
 
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
-# import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
-import sqlalchemy
+# import sqlalchemy
 
 from dash.dependencies import Input, Output
 
@@ -21,40 +20,35 @@ dash_app.title = 'obs-covid chile'
 
 app = dash_app.server
 
-DB = None
-
-DASH_ENV = os.environ.get('DASH_ENV', None)
-IS_DEV = DASH_ENV is None
-if IS_DEV is None:
-    DB_USER = os.environ['DB_USER']
-    DB_PASS = os.environ['DB_PASS']
-    DB_NAME = os.environ['DB_NAME']
-    CLOUD_SQL_CONNECTION_NAME = os.environ['CLOUD_SQL_CONNECTION_NAME']
-
-
-def get_db():
-    global DB
-    if DB is None:
-        # postgres://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
-        sql_url = sqlalchemy.engine.url.URL(
-            drivername='postgres+pg8000',
-            username=DB_USER,
-            password=DB_PASS,
-            database=DB_NAME,
-            query={
-                'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)}
-        )
-        DB = sqlalchemy.create_engine(sql_url)
-    return DB
+# DB = None
+# DASH_ENV = os.environ.get('DASH_ENV', None)
+# IS_DEV = DASH_ENV is None
+# if IS_DEV is None:
+#     DB_USER = os.environ['DB_USER']
+#     DB_PASS = os.environ['DB_PASS']
+#     DB_NAME = os.environ['DB_NAME']
+#     CLOUD_SQL_CONNECTION_NAME = os.environ['CLOUD_SQL_CONNECTION_NAME']
 
 
-if not IS_DEV:
-    DB = get_db()
-    # df = pd.read_sql('casos_totales_cumulativo_t', con=DB, parse_dates=['Region']).set_index('Region')
-    df = pd.read_sql('casos_totales_cumulativo_t', con=DB, index_col=['Region'])
-else:
-    url = 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto3/CasosTotalesCumulativo_T.csv'
-    df = pd.read_csv(url, index_col='Region')
+# def get_db():
+#     global DB
+#     if DB is None:
+#         # postgres://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
+#         sql_url = sqlalchemy.engine.url.URL(
+#             drivername='postgres+pg8000',
+#             username=DB_USER,
+#             password=DB_PASS,
+#             database=DB_NAME,
+#             query={
+#                 'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)}
+#         )
+#         DB = sqlalchemy.create_engine(sql_url)
+#     return DB
+
+
+# if not IS_DEV:
+#     DB = get_db()
+#     df = pd.read_sql('casos_totales_cumulativo_t', con=DB, index_col=['Region'])
 
 POPULATION = {
     'Arica y Parinacota': 226068,
@@ -97,6 +91,7 @@ MARKER_SYMBOLS = {
 }
 
 URLS = {
+    'casos_totales_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto3/CasosTotalesCumulativo_T.csv',
     'casos_nuevos_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto13/CasosNuevosCumulativo_T.csv',
     'uci_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto8/UCI_T.csv',
     'numero_ventiladores_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto20/NumeroVentiladores_T.csv',
@@ -105,6 +100,30 @@ URLS = {
 }
 
 DFS = {}
+
+# casos_totales_cumulativo_t
+DFS['casos_totales_cumulativo_t'] = pd.read_csv(URLS['casos_totales_cumulativo_t'], index_col='Region')
+DFS['casos_totales_cumulativo_t_per_k'] = DFS['casos_totales_cumulativo_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+
+
+# casos_totales_evolucion
+def get_start_days(df):
+    """Build a series with regions as an index, values being date at which 10 cases was reached."""
+    df_is_day_0 = ((df >= 10).astype(int).cumsum() == 1).astype(int)
+    start_days = df_is_day_0.apply(lambda col: df.index.values * col).sum(axis=0)
+    return start_days
+
+
+def days_to_shift(col):
+    earliest_date = dt.datetime.strptime('2020-03-03', '%Y-%m-%d')
+    return (earliest_date - dt.datetime.strptime(dias_iniciales[col.name], '%Y-%m-%d')).days
+
+
+dias_iniciales = get_start_days(DFS['casos_totales_cumulativo_t'])
+DFS['casos_totales_evolucion'] = DFS['casos_totales_cumulativo_t'].drop(columns=['Aysén'])\
+                                                                  .apply(lambda col: col.shift(days_to_shift(col)))\
+                                                                  .reset_index()\
+                                                                  .drop(columns=['Region'])
 
 # fallecidos_cumulativo_t
 DFS['fallecidos_cumulativo_t'] = pd.read_csv(URLS['fallecidos_cumulativo_t'], index_col='Region')
@@ -137,7 +156,6 @@ POR_MIL_HAB = 'Por Mil Hab.'
 
 
 def prepare_report():
-    # Regiones with top new deaths:
     top_3_deaths = sorted(DFS['fallecidos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
     top_3_deaths_last_day = sorted(DFS['fallecidos_cumulativo_t'].diff().iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
     top_3_uci = sorted(DFS['uci_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
@@ -160,35 +178,6 @@ def prepare_report():
 
 
 REPORT = prepare_report()
-
-
-def get_start_days(df):
-    """Build a series with regions as an index, values being date at which 10 cases was reached."""
-    df_is_day_0 = ((df >= 10).astype(int).cumsum() == 1).astype(int)
-    start_days = df_is_day_0.apply(lambda col: df.index.values * col).sum(axis=0)
-    return start_days
-
-
-def days_to_shift(col):
-    earliest_date = dt.datetime.strptime('2020-03-03', '%Y-%m-%d')
-    return (earliest_date - dt.datetime.strptime(dias_iniciales[col.name], '%Y-%m-%d')).days
-
-
-# Transform:
-dias_iniciales = get_start_days(df)
-plot_df = df.drop(columns=['Aysén'])\
-            .apply(lambda col: col.shift(days_to_shift(col)))\
-            .reset_index()\
-            .drop(columns=['Region'])
-
-df_per_k = df.apply(lambda col: col * 1_000.0 / POPULATION[col.name])
-
-# fig = px.line(plot_df,
-#               #   x='Días desde el décimo caso confirmado en la región',
-#               x=plot_df.index,
-#               #   y='Número de casos confirmados (escala logarítmica)')
-#               y=plot_df['Total'])
-
 date_day = 20
 
 
@@ -219,8 +208,8 @@ def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB
     return fig
 
 
-def make_fig1(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    data = df_per_k if value_type == POR_MIL_HAB else df
+def make_fig_casos_totales_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
+    data = DFS['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_totales_cumulativo_t']
 
     yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
@@ -234,9 +223,6 @@ def make_fig1(yaxis_type='Lineal', value_type=POR_MIL_HAB):
 
         fig.add_trace(scatter)
 
-        # fig.add_trace(go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-        #                          marker_symbol=MARKER_SYMBOLS[col], marker_size=10,))
-
     fig.layout = {
         'title': f'Casos confirmados acumulados por región ({date_day} abril)',
         'xaxis': {'title': 'Fecha'},
@@ -249,10 +235,10 @@ def make_fig1(yaxis_type='Lineal', value_type=POR_MIL_HAB):
     return fig
 
 
-def make_fig2():
-    data = plot_df
+def make_fig_casos_totales_evolucion():
+    data = DFS['casos_totales_evolucion']
     fig = go.Figure()
-    for col in plot_df.columns:
+    for col in data.columns:
         scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
                              marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
         if col == 'Total':
@@ -490,7 +476,7 @@ dash_app.layout = html.Div(className='container', children=[
     dbc.Form(inline=True, children=[
         dbc.FormGroup(className="mr-3", children=[
             dcc.RadioItems(
-                id='graph1-yaxis-type',
+                id='graph_casos_totales_cumulativo_t-yaxis-type',
                 className='form-check form-check-inline',
                 options=[{'label': i, 'value': i} for i in ['Lineal', 'Logarítmico']],
                 value='Lineal',
@@ -500,7 +486,7 @@ dash_app.layout = html.Div(className='container', children=[
         ]),
         dbc.FormGroup(className="mr-3", children=[
             dcc.RadioItems(
-                id='graph1-value-type',
+                id='graph_casos_totales_cumulativo_t-value-type',
                 className='form-check form-check-inline',
                 options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
                 value=POR_MIL_HAB,
@@ -511,8 +497,8 @@ dash_app.layout = html.Div(className='container', children=[
     ]),
 
     dcc.Graph(
-        id='graph1',
-        figure=make_fig1()
+        id='graph_casos_totales_cumulativo_t',
+        figure=make_fig_casos_totales_cumulativo_t()
     ),
 
     html.H2(className='mt-4', children='Gráfico 3. Evolución de casos totales por región'),
@@ -523,7 +509,7 @@ dash_app.layout = html.Div(className='container', children=[
 
     dcc.Graph(
         id='graph2',
-        figure=make_fig2()
+        figure=make_fig_casos_totales_evolucion()
     ),
 
     # ===========
@@ -649,11 +635,11 @@ def update_graph_fallecidos_cumulativo_t(value_type):
 
 
 @dash_app.callback(
-    Output('graph1', 'figure'),
-    [Input('graph1-yaxis-type', 'value'),
-     Input('graph1-value-type', 'value')])
-def update_graph1(yaxis_type, value_type):
-    return make_fig1(yaxis_type=yaxis_type, value_type=value_type)
+    Output('graph_casos_totales_cumulativo_t', 'figure'),
+    [Input('graph_casos_totales_cumulativo_t-yaxis-type', 'value'),
+     Input('graph_casos_totales_cumulativo_t-value-type', 'value')])
+def update_graph_casos_totales_cumulativo_t(yaxis_type, value_type):
+    return make_fig_casos_totales_cumulativo_t(yaxis_type=yaxis_type, value_type=value_type)
 
 
 @dash_app.callback(
