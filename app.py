@@ -11,30 +11,38 @@ import plotly.graph_objects as go
 from dash.dependencies import Input, Output
 
 
-external_stylesheets = ['https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css']
+metas = [
+    {'name': 'twitter:card', 'content': 'summary'},
+    # <meta name="twitter:site" content="@nytimesbits" />
+    {'name': 'twitter:creator', 'content': '@gdiazc'},
+    {'property': 'og:url', 'content': 'https://obs-covid.cl/'},
+    {'property': 'og:title', 'content': 'obs-covid chile'},
+    {'property': 'og:description', 'content': 'Gráficos actualizados automáticamente a diario sobre la pandemia COVID en Chile.'},
+    # <meta property="og:image" content="http://graphics8.nytimes.com/images/2011/12/08/technology/bits-newtwitter/bits-newtwitter-tmagArticle.jpg" />
+]
 
-dash_app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+dash_app = dash.Dash(__name__, meta_tags=metas, external_stylesheets=[dbc.themes.BOOTSTRAP])
 dash_app.title = 'obs-covid chile'
 
 app = dash_app.server
 
 POPULATION = {
-    'Arica y Parinacota': 226068,
-    'Tarapacá': 581802,
-    'Antofagasta': 607534,
-    'Atacama': 286168,
-    'Coquimbo': 757586,
-    'Valparaíso': 1815902,
-    'Metropolitana': 7112808,
-    'O’Higgins': 914555,
-    'Maule': 1044950,
-    'Ñuble': 480609,
-    'Biobío': 1556805,
-    'Araucanía': 957224,
-    'Los Ríos': 384837,
-    'Los Lagos': 828708,
-    'Aysén': 103158,
-    'Magallanes': 166533,
+    'Arica y Parinacota': 226_068,
+    'Tarapacá': 581_802,
+    'Antofagasta': 607_534,
+    'Atacama': 286_168,
+    'Coquimbo': 757_586,
+    'Valparaíso': 1_815_902,
+    'Metropolitana': 7_112_808,
+    'O’Higgins': 914_555,
+    'Maule': 1_044_950,
+    'Ñuble': 480_609,
+    'Biobío': 1_556_805,
+    'Araucanía': 957_224,
+    'Los Ríos': 384_837,
+    'Los Lagos': 828_708,
+    'Aysén': 103_158,
+    'Magallanes': 166_533,
 }
 POPULATION['Total'] = sum(POPULATION.values())
 
@@ -64,7 +72,8 @@ URLS = {
     'uci_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto8/UCI_T.csv',
     'numero_ventiladores_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto20/NumeroVentiladores_T.csv',
     'pcr_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto7/PCR_T.csv',
-    'fallecidos_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto14/FallecidosCumulativo_T.csv'
+    'fallecidos_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto14/FallecidosCumulativo_T.csv',
+    'fallecidos_etario_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto10/FallecidosEtario_T.csv',
 }
 
 DFS = {}
@@ -96,6 +105,9 @@ DFS['casos_totales_evolucion'] = DFS['casos_totales_cumulativo_t'].drop(columns=
 # fallecidos_cumulativo_t
 DFS['fallecidos_cumulativo_t'] = pd.read_csv(URLS['fallecidos_cumulativo_t'], index_col='Region')
 DFS['fallecidos_cumulativo_t_per_k'] = DFS['fallecidos_cumulativo_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+
+# fallecidos_etario_t
+DFS['fallecidos_etario_t'] = pd.read_csv(URLS['fallecidos_etario_t'], index_col='Grupo de edad')
 
 # uci_t
 DFS['uci_t'] = pd.read_csv(URLS['uci_t'], index_col='Region')
@@ -177,6 +189,33 @@ def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB
                 'type': yaxis_type
             },
             'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
+
+
+def make_fig_fallecidos_etario_t():
+    key = ('fallecidos_etario_t', '', '')
+
+    if key not in FIGS:
+        data = DFS['fallecidos_etario_t']
+
+        yaxis_title = 'Muertes confirmadas por rango etario'
+        yaxis_type = 'linear'
+
+        fig = go.Figure()
+        bar = go.Bar(x=data.columns.values, y=data.iloc[-1, :].values, name='Muertes totales')
+        fig.add_trace(bar)
+
+        fig.layout = {
+            'title': f'Número de muertes confirmadas ({date_day} abril)',
+            'xaxis': {'title': 'Rango etario'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 400
         }
 
         FIGS[key] = fig
@@ -411,17 +450,14 @@ dash_app.layout = html.Div(className='container', children=[
     # Gráfico 0. Evolución de casos totales por región
     # ===========
 
-    html.H2(className='mt-4', children='Evolución de casos totales por región'),
+    html.H2(className='mt-4', children='Evolución de casos confirmados por región'),
 
     dcc.Markdown('''
         Este gráfico ha sido utilizado en el mundo para contrastar la evolución de la pandemia en distintos
-        países y regiones. En el eje horizontal están los "días desde alcanzar 10 casos confirmado".
+        países y regiones. En el eje horizontal se cuentan días desde haber alcanzado 10 casos confirmados.
     '''),
 
-    dcc.Graph(
-        id='graph_casos_totales_evolucion',
-        figure=make_fig_casos_totales_evolucion()
-    ),
+    dcc.Graph(id='graph_casos_totales_evolucion', figure=make_fig_casos_totales_evolucion()),
 
     # ===========
     # Reporte ejecutivo
@@ -447,7 +483,7 @@ dash_app.layout = html.Div(className='container', children=[
         - **Tests PCR realizados hoy:**
             - {tests_today_string} tests ({tests_diff_string})
     '''.format(
-        top_3_deaths_last_day_string=', '.join([f'{reg} (`{int(n)}` muertes)' for reg, n in REPORT['top_3_deaths_last_day']]),
+        top_3_deaths_last_day_string=', '.join([f'{reg} (`{int(n)}` muertes hoy)' for reg, n in REPORT['top_3_deaths_last_day']]),
         top_3_deaths_string=', '.join([f'{reg} (`{int(n)}` muertes)' for reg, n in REPORT['top_3_deaths']]),
         top_3_uci_string=', '.join([f'{reg} (`{n}` pacientes UCI)' for reg, n in REPORT['top_3_uci']]),
         top_3_new_cases_string=', '.join([f'{reg} (`{n}` casos)' for reg, n in REPORT['top_3_new_cases']]),
@@ -479,10 +515,19 @@ dash_app.layout = html.Div(className='container', children=[
         ])
     ]),
 
-    dcc.Graph(
-        id='graph_fallecidos_cumulativo_t',
-        figure=make_fig_fallecidos_cumulativo_t()
-    ),
+    dcc.Graph(id='graph_fallecidos_cumulativo_t', figure=make_fig_fallecidos_cumulativo_t()),
+
+    # ===========
+    # Gráfico 1b. Muertes por rango etario
+    # ===========
+
+    html.H3(id='muertes-por-rango-etario', className='mt-2',
+            children='Gráfico 1b. Muertes por rango etario'),
+
+    dcc.Markdown('''
+    '''),
+
+    dcc.Graph(id='graph_fallecidos_etario_t', figure=make_fig_fallecidos_etario_t()),
 
     # ===========
     # Gráfico 2. Casos confirmados acumulados por región
@@ -521,10 +566,7 @@ dash_app.layout = html.Div(className='container', children=[
         ])
     ]),
 
-    dcc.Graph(
-        id='graph_casos_totales_cumulativo_t',
-        figure=make_fig_casos_totales_cumulativo_t()
-    ),
+    dcc.Graph(id='graph_casos_totales_cumulativo_t', figure=make_fig_casos_totales_cumulativo_t()),
 
     # ===========
     # Gráfico 3. Casos nuevos confirmados por región
@@ -550,10 +592,7 @@ dash_app.layout = html.Div(className='container', children=[
         ])
     ]),
 
-    dcc.Graph(
-        id='graph_casos_nuevos_cumulativo_t',
-        figure=make_fig_casos_nuevos_cumulativo_t()
-    ),
+    dcc.Graph(id='graph_casos_nuevos_cumulativo_t', figure=make_fig_casos_nuevos_cumulativo_t()),
 
     # ===========
     # Gráfico 4. Pacientes críticos por región
@@ -608,10 +647,7 @@ dash_app.layout = html.Div(className='container', children=[
         ])
     ]),
 
-    dcc.Graph(
-        id='graph_pcr_t',
-        figure=make_fig_pcr_t()
-    ),
+    dcc.Graph(id='graph_pcr_t', figure=make_fig_pcr_t()),
 
     # ===========
     # Gráfico 6. Uso y capacidad de ventiladores
@@ -623,10 +659,7 @@ dash_app.layout = html.Div(className='container', children=[
     Por ahora sólo hay cifras disponibles para el total nacional.
     '''),
 
-    dcc.Graph(
-        id='graph_numero_ventiladores_t',
-        figure=make_fig_numero_ventiladores_t()
-    ),
+    dcc.Graph(id='graph_numero_ventiladores_t', figure=make_fig_numero_ventiladores_t()),
 
     # ===========
     # Gráfico 7. Casos nuevos por cada test
@@ -642,10 +675,7 @@ dash_app.layout = html.Div(className='container', children=[
     **Nota:** Hay errores en estos datos debido a que es imposible tener un valor por sobre 100% (ver Magallanes).
     '''),
 
-    dcc.Graph(
-        id='graph_casos_nuevos_per_test',
-        figure=make_fig_casos_nuevos_per_test()
-    ),
+    dcc.Graph(id='graph_casos_nuevos_per_test', figure=make_fig_casos_nuevos_per_test()),
 
 ])
 
