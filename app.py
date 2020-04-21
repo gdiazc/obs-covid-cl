@@ -201,7 +201,7 @@ def make_fig_fallecidos_etario_t():
     if key not in FIGS:
         data = DFS['fallecidos_etario_t']
 
-        yaxis_title = 'Muertes confirmadas por rango etario'
+        yaxis_title = 'Número de muertes confirmadas'
         yaxis_type = 'linear'
 
         fig = go.Figure()
@@ -209,7 +209,7 @@ def make_fig_fallecidos_etario_t():
         fig.add_trace(bar)
 
         fig.layout = {
-            'title': f'Número de muertes confirmadas ({date_day} abril)',
+            'title': f'Muertes confirmadas por rango etario ({date_day} abril)',
             'xaxis': {'title': 'Rango etario'},
             'yaxis': {
                 'title': yaxis_title,
