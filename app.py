@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
-# import os
 
 import dash
 import dash_core_components as dcc
@@ -8,7 +7,6 @@ import dash_html_components as html
 import dash_bootstrap_components as dbc
 import pandas as pd
 import plotly.graph_objects as go
-# import sqlalchemy
 
 from dash.dependencies import Input, Output
 
@@ -19,36 +17,6 @@ dash_app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
 dash_app.title = 'obs-covid chile'
 
 app = dash_app.server
-
-# DB = None
-# DASH_ENV = os.environ.get('DASH_ENV', None)
-# IS_DEV = DASH_ENV is None
-# if IS_DEV is None:
-#     DB_USER = os.environ['DB_USER']
-#     DB_PASS = os.environ['DB_PASS']
-#     DB_NAME = os.environ['DB_NAME']
-#     CLOUD_SQL_CONNECTION_NAME = os.environ['CLOUD_SQL_CONNECTION_NAME']
-
-
-# def get_db():
-#     global DB
-#     if DB is None:
-#         # postgres://<db_user>:<db_pass>@/<db_name>?unix_sock=/cloudsql/<cloud_sql_instance_name>/.s.PGSQL.5432
-#         sql_url = sqlalchemy.engine.url.URL(
-#             drivername='postgres+pg8000',
-#             username=DB_USER,
-#             password=DB_PASS,
-#             database=DB_NAME,
-#             query={
-#                 'unix_sock': '/cloudsql/{}/.s.PGSQL.5432'.format(CLOUD_SQL_CONNECTION_NAME)}
-#         )
-#         DB = sqlalchemy.create_engine(sql_url)
-#     return DB
-
-
-# if not IS_DEV:
-#     DB = get_db()
-#     df = pd.read_sql('casos_totales_cumulativo_t', con=DB, index_col=['Region'])
 
 POPULATION = {
     'Arica y Parinacota': 226068,
@@ -180,209 +148,249 @@ def prepare_report():
 REPORT = prepare_report()
 date_day = 21
 
+FIGS = {}
+
 
 def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    data = DFS['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['fallecidos_cumulativo_t']
+    key = ('fallecidos_cumulativo_t', yaxis_type, value_type)
 
-    yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-    yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+    if key not in FIGS:
+        data = DFS['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['fallecidos_cumulativo_t']
 
-    fig = go.Figure()
-    for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-        if col == 'Total':
-            scatter.marker.color = 'black'
+        yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-        fig.add_trace(scatter)
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
 
-    fig.layout = {
-        'title': f'Muertes acumulados por región ({date_day} abril)',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': yaxis_title,
-            'type': yaxis_type
-        },
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Muertes acumulados por región ({date_day} abril)',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 def make_fig_casos_totales_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    data = DFS['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_totales_cumulativo_t']
+    key = ('casos_totales_cumulativo_t', yaxis_type, value_type)
 
-    yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-    yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+    if key not in FIGS:
+        data = DFS['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_totales_cumulativo_t']
 
-    fig = go.Figure()
-    for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-        if col == 'Total':
-            scatter.marker.color = 'black'
+        yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-        fig.add_trace(scatter)
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
 
-    fig.layout = {
-        'title': f'Casos confirmados acumulados por región ({date_day} abril)',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': yaxis_title,
-            'type': yaxis_type
-        },
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Casos confirmados acumulados por región ({date_day} abril)',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 def make_fig_casos_totales_evolucion():
-    data = DFS['casos_totales_evolucion']
-    fig = go.Figure()
-    for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-        if col == 'Total':
-            scatter.marker.color = 'black'
+    key = ('casos_totales_evolucion', '', '')
 
-        fig.add_trace(scatter)
+    if key not in FIGS:
+        data = DFS['casos_totales_evolucion']
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
 
-    fig.layout = {
-        'title': f'Evolución de casos confirmados por región ({date_day} abril)',
-        'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
-        'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Evolución de casos confirmados por región ({date_day} abril)',
+            'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
+            'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    data = DFS['casos_nuevos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_nuevos_cumulativo_t']
+    key = ('casos_nuevos_cumulativo_t', yaxis_type, value_type)
 
-    yaxis_title = 'Casos confirmados nuevos' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-    yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+    if key not in FIGS:
+        data = DFS['casos_nuevos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_nuevos_cumulativo_t']
 
-    fig = go.Figure()
-    for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-        if col == 'Total':
-            scatter.marker.color = 'black'
+        yaxis_title = 'Casos confirmados nuevos' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-        fig.add_trace(scatter)
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
 
-    fig.layout = {
-        'title': f'Casos nuevos confirmados por región ({date_day} abril)',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': yaxis_title,
-            'type': yaxis_type
-        },
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Casos nuevos confirmados por región ({date_day} abril)',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 def make_fig_uci_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    data = DFS['uci_t_per_k'] if value_type == POR_MIL_HAB else DFS['uci_t']
+    key = ('uci_t', yaxis_type, value_type)
 
-    yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-    yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+    if key not in FIGS:
+        data = DFS['uci_t_per_k'] if value_type == POR_MIL_HAB else DFS['uci_t']
 
-    fig = go.Figure()
-    for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-        if col == 'Total':
-            scatter.marker.color = 'black'
+        yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-        fig.add_trace(scatter)
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
 
-    fig.layout = {
-        'title': f'Pacientes en UCI por región ({date_day} abril)',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': yaxis_title,
-            'type': yaxis_type
-        },
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Pacientes en UCI por región ({date_day} abril)',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 def make_fig_pcr_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    data = DFS['pcr_t_per_k'] if value_type == POR_MIL_HAB else DFS['pcr_t']
+    key = ('pcr_t', yaxis_type, value_type)
 
-    yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-    yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+    if key not in FIGS:
+        data = DFS['pcr_t_per_k'] if value_type == POR_MIL_HAB else DFS['pcr_t']
 
-    fig = go.Figure()
-    for col in data.columns:
-        # fig.add_trace(go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-        #                          marker_symbol=MARKER_SYMBOLS[col], marker_size=10))
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-        if col == 'Total':
-            scatter.marker.color = 'black'
+        yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-        fig.add_trace(scatter)
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
 
-    fig.layout = {
-        'title': f'Tests PCR aplicados por región ({date_day} abril)',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': yaxis_title,
-            'type': yaxis_type
-        },
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Tests PCR aplicados por región ({date_day} abril)',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
-def make_fig4():
-    data = DFS['numero_ventiladores_t']
+def make_fig_numero_ventiladores_t():
+    key = ('numero_ventiladores_t', '', '')
 
-    fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data.index, y=data['ocupados'], mode='lines+markers', name='Ocupados', fill='tozeroy'))
-    fig.add_trace(go.Scatter(x=data.index, y=data['total'], mode='lines+markers', name='Total'))
-    fig.layout = {
-        'title': f'Uso de ventiladores',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': 'Número de ventiladores',
-            'range': [0, 2000]
-        },
-        'height': 520
-    }
-    return fig
+    if key not in FIGS:
+        data = DFS['numero_ventiladores_t']
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=data.index, y=data['ocupados'], mode='lines+markers', name='Ocupados', fill='tozeroy'))
+        fig.add_trace(go.Scatter(x=data.index, y=data['total'], mode='lines+markers', name='Total'))
+        fig.layout = {
+            'title': f'Uso de ventiladores',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': 'Número de ventiladores',
+                'range': [0, 2000]
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
-    data = DFS['casos_nuevos_per_test']
+    key = ('casos_nuevos_per_test', yaxis_type, '')
 
-    yaxis_title = 'Casos nuevos por cada test'
-    yaxis_type = 'linear'
+    if key not in FIGS:
+        data = DFS['casos_nuevos_per_test']
 
-    fig = go.Figure()
-    for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                             marker_symbol=MARKER_SYMBOLS[col], marker_size=10, visible='legendonly')
-        if col == 'Total':
-            scatter.marker.color = 'black'
-            scatter.visible = True
+        yaxis_title = 'Casos nuevos por cada test'
+        yaxis_type = 'linear'
 
-        fig.add_trace(scatter)
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10, visible='legendonly')
+            if col == 'Total':
+                scatter.marker.color = 'black'
+                scatter.visible = True
 
-    fig.layout = {
-        'title': f'Casos nuevos por cada test ({date_day} abril)',
-        'xaxis': {'title': 'Fecha'},
-        'yaxis': {
-            'title': yaxis_title,
-            'type': yaxis_type,
-            'range': [0.0, 50.0],
-        },
-        'height': 520
-    }
-    return fig
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Casos nuevos por cada test ({date_day} abril)',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type,
+                'range': [0.0, 50.0],
+            },
+            'height': 520
+        }
+
+        FIGS[key] = fig
+    return FIGS[key]
 
 
 dash_app.layout = html.Div(className='container', children=[
@@ -616,8 +624,8 @@ dash_app.layout = html.Div(className='container', children=[
     '''),
 
     dcc.Graph(
-        id='graph4',
-        figure=make_fig4()
+        id='graph_numero_ventiladores_t',
+        figure=make_fig_numero_ventiladores_t()
     ),
 
     # ===========
