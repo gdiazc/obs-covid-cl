@@ -178,7 +178,7 @@ def prepare_report():
 
 
 REPORT = prepare_report()
-date_day = 20
+date_day = 21
 
 
 def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
