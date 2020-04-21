@@ -399,6 +399,26 @@ dash_app.layout = html.Div(className='container', children=[
     Creado por [@gdiazc](https://twitter.com/gdiazc).
     '''),
 
+    # ===========
+    # Gráfico 0. Evolución de casos totales por región
+    # ===========
+
+    html.H2(className='mt-4', children='Evolución de casos totales por región'),
+
+    dcc.Markdown('''
+        Este gráfico ha sido utilizado en el mundo para contrastar la evolución de la pandemia en distintos
+        países y regiones. En el eje horizontal están los "días desde alcanzar 10 casos confirmado".
+    '''),
+
+    dcc.Graph(
+        id='graph_casos_totales_evolucion',
+        figure=make_fig_casos_totales_evolucion()
+    ),
+
+    # ===========
+    # Reporte ejecutivo
+    # ===========
+
     html.H2(id='reporte', className='mt-4', children=f'Reporte ejecutivo {date_day} abril'),
 
     dcc.Markdown('''
@@ -423,10 +443,13 @@ dash_app.layout = html.Div(className='container', children=[
         top_3_deaths_string=', '.join([f'{reg} (`{int(n)}` muertes)' for reg, n in REPORT['top_3_deaths']]),
         top_3_uci_string=', '.join([f'{reg} (`{n}` pacientes UCI)' for reg, n in REPORT['top_3_uci']]),
         top_3_new_cases_string=', '.join([f'{reg} (`{n}` casos)' for reg, n in REPORT['top_3_new_cases']]),
-        # top_3_new_cases_per_k_string=', '.join([f'{reg} ({n:.2} casos)' for reg, n in REPORT['top_3_new_cases_per_k']]),
         tests_today_string=f'`{int(REPORT["tests_today"])}`',
         tests_diff_string='`' + str(abs(int(REPORT['tests_diff']))) + ('` más' if REPORT['tests_diff'] > 0 else '` menos') + ' que ayer',
     )),
+
+    # ===========
+    # Gráfico 1. Muertes acumuladas por región
+    # ===========
 
     html.H2(id='h2_fallecidos_cumulativo_t', className='mt-4',
             children='Gráfico 1. Muertes acumuladas por región'),
@@ -436,16 +459,6 @@ dash_app.layout = html.Div(className='container', children=[
     '''),
 
     dbc.Form(inline=True, children=[
-        # dbc.FormGroup(className="mr-3", children=[
-        #     dcc.RadioItems(
-        #         id='graph_fallecidos_cumulativo_t-yaxis-type',
-        #         className='form-check form-check-inline',
-        #         options=[{'label': i, 'value': i} for i in ['Lineal', 'Logarítmico']],
-        #         value='Lineal',
-        #         labelStyle={'display': 'inline-block'},
-        #         labelClassName='form-check-label mr-2'
-        #     )
-        # ]),
         dbc.FormGroup(className="mr-3", children=[
             dcc.RadioItems(
                 id='graph_fallecidos_cumulativo_t-value-type',
@@ -462,6 +475,10 @@ dash_app.layout = html.Div(className='container', children=[
         id='graph_fallecidos_cumulativo_t',
         figure=make_fig_fallecidos_cumulativo_t()
     ),
+
+    # ===========
+    # Gráfico 2. Casos confirmados acumulados por región
+    # ===========
 
     html.H2(className='mt-4', children='Gráfico 2. Casos confirmados acumulados por región'),
 
@@ -501,22 +518,12 @@ dash_app.layout = html.Div(className='container', children=[
         figure=make_fig_casos_totales_cumulativo_t()
     ),
 
-    html.H2(className='mt-4', children='Gráfico 3. Evolución de casos totales por región'),
-
-    dcc.Markdown('''
-        Esta variante cambia el eje horizontal: en vez de reportar cifras según fecha, se reportan según "días desde alcanzar 10 casos confirmado".
-    '''),
-
-    dcc.Graph(
-        id='graph2',
-        figure=make_fig_casos_totales_evolucion()
-    ),
-
     # ===========
-    # Gráfico 4. Casos nuevos confirmados por región
+    # Gráfico 3. Casos nuevos confirmados por región
     # ===========
 
-    html.H2(id='h2_casos_nuevos_cumulativo_t', className='mt-4', children='Gráfico 4. Casos nuevos confirmados por región'),
+    html.H2(id='h2_casos_nuevos_cumulativo_t', className='mt-4',
+            children='Gráfico 3. Casos nuevos confirmados por región'),
 
     dcc.Markdown('''
     Opciones:
@@ -540,8 +547,12 @@ dash_app.layout = html.Div(className='container', children=[
         figure=make_fig_casos_nuevos_cumulativo_t()
     ),
 
+    # ===========
+    # Gráfico 4. Pacientes críticos por región
+    # ===========
+
     html.H2(id='h2_uci_t', className='mt-4',
-            children='Gráfico 5. Pacientes críticos por región'),
+            children='Gráfico 4. Pacientes críticos por región'),
 
     dcc.Markdown('''
         Pacientes en Unidades de Cuidados Intensivos.
@@ -565,10 +576,10 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_uci_t', figure=make_fig_uci_t()),
 
     # ===========
-    # Gráfico 6. Tests PCR aplicados
+    # Gráfico 5. Tests PCR aplicados
     # ===========
 
-    html.H2(id='h2_pcr_t', className='mt-4', children='Gráfico 6. Tests PCR aplicados'),
+    html.H2(id='h2_pcr_t', className='mt-4', children='Gráfico 5. Tests PCR aplicados'),
 
     dcc.Markdown('''
         Los datos sobre tests PCR aplicados tienen muchos vacíos, lo que se traduce en líneas disconexas en el gráfico.
@@ -594,7 +605,11 @@ dash_app.layout = html.Div(className='container', children=[
         figure=make_fig_pcr_t()
     ),
 
-    html.H2(className='mt-4', children='Gráfico 7. Uso y capacidad de ventiladores'),
+    # ===========
+    # Gráfico 6. Uso y capacidad de ventiladores
+    # ===========
+
+    html.H2(className='mt-4', children='Gráfico 6. Uso y capacidad de ventiladores'),
 
     dcc.Markdown('''
     Por ahora sólo hay cifras disponibles para el total nacional.
@@ -606,11 +621,11 @@ dash_app.layout = html.Div(className='container', children=[
     ),
 
     # ===========
-    # Gráfico 8. Casos nuevos por cada test
+    # Gráfico 7. Casos nuevos por cada test
     # ===========
 
     html.H2(id='h2_casos_nuevos_per_test', className='mt-4',
-            children='Gráfico 8. Casos nuevos por cada test'),
+            children='Gráfico 7. Casos nuevos por cada test'),
 
     dcc.Markdown('''
     Casos nuevos divididos en el número de tests que se realizaron. Este gráfico asume que todos los
