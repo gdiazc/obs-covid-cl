@@ -132,34 +132,25 @@ DFS['pcr_t_per_k'] = DFS['pcr_t'].apply(lambda col: col * 1_000.0 / POPULATION[c
 # casos_nuevos_per_test
 DFS['casos_nuevos_per_test'] = (DFS['casos_nuevos_cumulativo_t'] / DFS['pcr_t']).loc['2020-04-09':, :] * 100.0   # type: ignore
 
-POR_MIL_HAB = 'Por Mil Hab.'
-
 
 def prepare_report():
-    top_3_deaths = sorted(DFS['fallecidos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    top_3_deaths_last_day = sorted(DFS['fallecidos_cumulativo_t'].diff().iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    top_3_uci = sorted(DFS['uci_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    top_3_new_cases = sorted(DFS['casos_nuevos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    top_3_new_cases_per_k = sorted(DFS['casos_nuevos_cumulativo_t_per_k'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    tests_today = DFS['pcr_t'].iloc[-1]['Total']
-    tests_yesterday = DFS['pcr_t'].iloc[-2]['Total']
-    tests_diff = tests_today - tests_yesterday
-    report = {
-        'top_3_deaths': top_3_deaths,
-        'top_3_deaths_last_day': top_3_deaths_last_day,
-        'top_3_uci': top_3_uci,
-        'top_3_new_cases': top_3_new_cases,
-        'top_3_new_cases_per_k': top_3_new_cases_per_k,
-        'tests_today': tests_today,
-        'tests_yesterday': tests_yesterday,
-        'tests_diff': tests_diff
-    }
+    report = {}
+    report['total_deaths'] = DFS['fallecidos_cumulativo_t']['Total'][-1]
+    report['deaths_today'] = DFS['fallecidos_cumulativo_t']['Total'][-1] - DFS['fallecidos_cumulativo_t']['Total'][-2]
+    report['top_3_deaths'] = sorted(DFS['fallecidos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_deaths_last_day'] = sorted(DFS['fallecidos_cumulativo_t'].diff().iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_uci'] = sorted(DFS['uci_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_new_cases'] = sorted(DFS['casos_nuevos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_new_cases_per_k'] = sorted(DFS['casos_nuevos_cumulativo_t_per_k'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['tests_today'] = DFS['pcr_t'].iloc[-1]['Total']
+    report['tests_yesterday'] = DFS['pcr_t'].iloc[-2]['Total']
+    report['tests_diff'] = report['tests_today'] - report['tests_yesterday']
     return report
 
 
+POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
 date_day = 21
-
 FIGS = {}
 
 
@@ -468,21 +459,26 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Markdown('''
     Cifras importantes del día, actualizadas **automáticamente**.
 
-    1. Muertes ([ir al gráfico](#h2_fallecidos_cumulativo_t))
+    1. Muertes ([ir al gráfico](#muertes))
+        - **Muertes nacionales:**
+            - `{deaths_today}` muertes en Chile hoy
+            - `{total_deaths}` muertes en Chile hasta la fecha
         - **Regiones con más muertes hoy:**
             - {top_3_deaths_last_day_string}
         - **Regiones con más muertes hasta la fecha:**
             - {top_3_deaths_string}
-    1. Casos críticos ([ir al gráfico](#h2_uci_t))
+    1. Casos críticos ([ir al gráfico](#pacientes-en-uci))
         - **Regiones con más pacientes UCI hoy:**
             - {top_3_uci_string}
-    1. Casos confirmados ([ir al gráfico](#h2_casos_nuevos_cumulativo_t))
+    1. Casos confirmados ([ir al gráfico](#casos-acumulados))
         - **Regiones con más casos nuevos hoy:**
             - {top_3_new_cases_string}
-    1. Testeo ([ir al gráfico](#h2_pcr_t))
+    1. Testeo ([ir al gráfico](#testeo))
         - **Tests PCR realizados hoy:**
             - {tests_today_string} tests ({tests_diff_string})
     '''.format(
+        deaths_today=REPORT['deaths_today'],
+        total_deaths=REPORT['total_deaths'],
         top_3_deaths_last_day_string=', '.join([f'{reg} (`{int(n)}` muertes hoy)' for reg, n in REPORT['top_3_deaths_last_day']]),
         top_3_deaths_string=', '.join([f'{reg} (`{int(n)}` muertes)' for reg, n in REPORT['top_3_deaths']]),
         top_3_uci_string=', '.join([f'{reg} (`{n}` pacientes UCI)' for reg, n in REPORT['top_3_uci']]),
@@ -495,8 +491,7 @@ dash_app.layout = html.Div(className='container', children=[
     # Gráfico 1. Muertes acumuladas por región
     # ===========
 
-    html.H2(id='h2_fallecidos_cumulativo_t', className='mt-4',
-            children='Gráfico 1. Muertes acumuladas por región'),
+    html.H2(id='muertes', className='mt-4', children='Gráfico 1. Muertes acumuladas por región '),
 
     dcc.Markdown('''
         Opciones:
@@ -530,10 +525,51 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_fallecidos_etario_t', figure=make_fig_fallecidos_etario_t()),
 
     # ===========
-    # Gráfico 2. Casos confirmados acumulados por región
+    # Gráfico 2. Pacientes críticos por región
     # ===========
 
-    html.H2(className='mt-4', children='Gráfico 2. Casos confirmados acumulados por región'),
+    html.H2(id='pacientes-en-uci', className='mt-4',
+            children='Gráfico 2. Pacientes críticos por región'),
+
+    dcc.Markdown('''
+        Pacientes en Unidades de Cuidados Intensivos.
+
+        Opciones:
+    '''),
+
+    dbc.Form(inline=True, children=[
+        dbc.FormGroup(className="mr-3", children=[
+            dcc.RadioItems(
+                id='graph_uci_t-value-type',
+                className='form-check form-check-inline',
+                options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
+                value='Total',
+                labelStyle={'display': 'inline-block'},
+                labelClassName='form-check-label mr-2'
+            )
+        ])
+    ]),
+
+    dcc.Graph(id='graph_uci_t', figure=make_fig_uci_t()),
+
+    # ===========
+    # Gráfico 2b. Uso y capacidad de ventiladores
+    # ===========
+
+    html.H3(className='mt-4', children='Gráfico 2b. Uso y capacidad de ventiladores'),
+
+    dcc.Markdown('''
+    Por ahora sólo hay cifras disponibles para el total nacional.
+    '''),
+
+    dcc.Graph(id='graph_numero_ventiladores_t', figure=make_fig_numero_ventiladores_t()),
+
+
+    # ===========
+    # Gráfico 3. Casos confirmados acumulados por región
+    # ===========
+
+    html.H2(id='casos-acumulados', className='mt-4', children='Gráfico 3. Casos confirmados acumulados por región'),
 
     dcc.Markdown('''
         **Nota:** La cifra de número de casos confirmados está altamente correlacionada
@@ -569,11 +605,11 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_casos_totales_cumulativo_t', figure=make_fig_casos_totales_cumulativo_t()),
 
     # ===========
-    # Gráfico 3. Casos nuevos confirmados por región
+    # Gráfico 4. Casos nuevos confirmados por región
     # ===========
 
-    html.H2(id='h2_casos_nuevos_cumulativo_t', className='mt-4',
-            children='Gráfico 3. Casos nuevos confirmados por región'),
+    html.H2(id='casos-nuevos', className='mt-4',
+            children='Gráfico 4. Casos nuevos confirmados por región'),
 
     dcc.Markdown('''
     Opciones:
@@ -595,38 +631,10 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_casos_nuevos_cumulativo_t', figure=make_fig_casos_nuevos_cumulativo_t()),
 
     # ===========
-    # Gráfico 4. Pacientes críticos por región
-    # ===========
-
-    html.H2(id='h2_uci_t', className='mt-4',
-            children='Gráfico 4. Pacientes críticos por región'),
-
-    dcc.Markdown('''
-        Pacientes en Unidades de Cuidados Intensivos.
-
-        Opciones:
-    '''),
-
-    dbc.Form(inline=True, children=[
-        dbc.FormGroup(className="mr-3", children=[
-            dcc.RadioItems(
-                id='graph_uci_t-value-type',
-                className='form-check form-check-inline',
-                options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
-                value=POR_MIL_HAB,
-                labelStyle={'display': 'inline-block'},
-                labelClassName='form-check-label mr-2'
-            )
-        ])
-    ]),
-
-    dcc.Graph(id='graph_uci_t', figure=make_fig_uci_t()),
-
-    # ===========
     # Gráfico 5. Tests PCR aplicados
     # ===========
 
-    html.H2(id='h2_pcr_t', className='mt-4', children='Gráfico 5. Tests PCR aplicados'),
+    html.H2(id='testeo', className='mt-4', children='Gráfico 5. Tests PCR aplicados'),
 
     dcc.Markdown('''
         Los datos sobre tests PCR aplicados tienen muchos vacíos, lo que se traduce en líneas disconexas en el gráfico.
@@ -650,23 +658,10 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_pcr_t', figure=make_fig_pcr_t()),
 
     # ===========
-    # Gráfico 6. Uso y capacidad de ventiladores
+    # Gráfico 6. Casos nuevos por cada test
     # ===========
 
-    html.H2(className='mt-4', children='Gráfico 6. Uso y capacidad de ventiladores'),
-
-    dcc.Markdown('''
-    Por ahora sólo hay cifras disponibles para el total nacional.
-    '''),
-
-    dcc.Graph(id='graph_numero_ventiladores_t', figure=make_fig_numero_ventiladores_t()),
-
-    # ===========
-    # Gráfico 7. Casos nuevos por cada test
-    # ===========
-
-    html.H2(id='h2_casos_nuevos_per_test', className='mt-4',
-            children='Gráfico 7. Casos nuevos por cada test'),
+    html.H2(className='mt-4', children='Gráfico 6. Casos nuevos por cada test'),
 
     dcc.Markdown('''
     Casos nuevos divididos en el número de tests que se realizaron. Este gráfico asume que todos los
