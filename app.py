@@ -664,10 +664,9 @@ dash_app.layout = html.Div(className='container', children=[
     html.H2(className='mt-4', children='Gráfico 6. Casos nuevos por cada test'),
 
     dcc.Markdown('''
-    Casos nuevos divididos en el número de tests que se realizaron. Este gráfico asume que todos los
-    nuevos casos son confirmados a través de tests PCR.
+    Casos nuevos divididos en el número de tests que se realizaron.
 
-    **Nota:** Hay errores en estos datos debido a que es imposible tener un valor por sobre 100% (ver Magallanes).
+    **Nota:** Este gráfico asume que todos los nuevos casos son confirmados a través de tests PCR.
     '''),
 
     dcc.Graph(id='graph_casos_nuevos_per_test', figure=make_fig_casos_nuevos_per_test()),
