@@ -457,7 +457,8 @@ dash_app.layout = html.Div(className='container', children=[
     html.H2(id='reporte', className='mt-4', children=f'Reporte ejecutivo {date_day} abril'),
 
     dcc.Markdown('''
-    Cifras importantes del día, actualizadas **automáticamente**.
+    Cifras importantes del día, actualizadas **automáticamente** (nota: las cifras se actualizan
+    usualmente a medio día).
 
     1. Muertes ([ir al gráfico](#muertes))
         - **Muertes nacionales:**
