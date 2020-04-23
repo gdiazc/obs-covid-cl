@@ -150,7 +150,7 @@ def prepare_report():
 
 POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
-date_day = 21
+date_day = 22
 FIGS = {}
 
 
