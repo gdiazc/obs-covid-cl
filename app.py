@@ -460,7 +460,7 @@ dash_app.layout = html.Div(children=[
 
             dbc.Form(inline=True, children=[
                 # dbc.FormGroup(className="mr-3", children=[
-                #     dcc.RadioItems(
+                #     dbc.RadioItems(
                 #         id='graph_fallecidos_cumulativo_t-yaxis-type',
                 #         className='form-check form-check-inline',
                 #         options=[{'label': i, 'value': i} for i in ['Lineal', 'Logarítmico']],
@@ -470,7 +470,7 @@ dash_app.layout = html.Div(children=[
                 #     )
                 # ]),
                 dbc.FormGroup(className="mr-3", children=[
-                    dcc.RadioItems(
+                    dbc.RadioItems(
                         id='graph_fallecidos_cumulativo_t-value-type',
                         className='form-check form-check-inline ml-2',
                         options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
@@ -509,7 +509,7 @@ dash_app.layout = html.Div(children=[
             '''),
             dbc.Form(inline=True, children=[
                 dbc.FormGroup(className="mr-3", children=[
-                    dcc.RadioItems(
+                    dbc.RadioItems(
                         id='graph1-yaxis-type',
                         className='form-check form-check-inline',
                         options=[{'label': i, 'value': i} for i in ['Lineal', 'Logarítmico']],
@@ -519,7 +519,7 @@ dash_app.layout = html.Div(children=[
                     )
                 ]),
                 dbc.FormGroup(className="mr-3", children=[
-                    dcc.RadioItems(
+                    dbc.RadioItems(
                         id='graph1-value-type',
                         className='form-check form-check-inline',
                         options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
@@ -586,7 +586,7 @@ dash_app.layout = html.Div(children=[
 
             dbc.Form(inline=True, children=[
                 dbc.FormGroup(className="mr-3", children=[
-                    dcc.RadioItems(
+                    dbc.RadioItems(
                         id='graph_casos_nuevos_cumulativo_t-value-type',
                         className='form-check form-check-inline',
                         options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
@@ -627,7 +627,7 @@ dash_app.layout = html.Div(children=[
 
             dbc.Form(inline=True, children=[
                 dbc.FormGroup(className="mr-3", children=[
-                    dcc.RadioItems(
+                    dbc.RadioItems(
                         id='graph_uci_t-value-type',
                         className='form-check form-check-inline',
                         options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
@@ -665,7 +665,7 @@ dash_app.layout = html.Div(children=[
 
             dbc.Form(inline=True, children=[
                 dbc.FormGroup(className="mr-3", children=[
-                    dcc.RadioItems(
+                    dbc.RadioItems(
                         id='graph_pcr_t-value-type',
                         className='form-check form-check-inline',
                         options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
