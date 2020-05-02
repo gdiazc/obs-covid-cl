@@ -86,7 +86,7 @@ DFS['casos_totales_cumulativo_t_per_k'] = DFS['casos_totales_cumulativo_t'].appl
 # casos_totales_evolucion
 def get_start_days(df):
     """Build a series with regions as an index, values being date at which 10 cases was reached."""
-    df_is_day_0 = ((df >= 10).astype(int).cumsum() == 1).astype(int)
+    df_is_day_0 = ((df >= 1).astype(int).cumsum() == 1).astype(int)
     start_days = df_is_day_0.apply(lambda col: df.index.values * col).sum(axis=0)
     return start_days
 
@@ -97,8 +97,7 @@ def days_to_shift(col):
 
 
 dias_iniciales = get_start_days(DFS['casos_totales_cumulativo_t'])
-DFS['casos_totales_evolucion'] = DFS['casos_totales_cumulativo_t'].drop(columns=['Aysén'])\
-                                                                  .apply(lambda col: col.shift(days_to_shift(col)))\
+DFS['casos_totales_evolucion'] = DFS['casos_totales_cumulativo_t'].apply(lambda col: col.shift(days_to_shift(col)))\
                                                                   .reset_index()\
                                                                   .drop(columns=['Region'])
 
@@ -150,7 +149,7 @@ def prepare_report():
 
 POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
-date_day = 1
+date_day = 2
 date_month = 'mayo'
 FIGS = {}
 
@@ -271,7 +270,7 @@ def make_fig_casos_totales_evolucion():
     return FIGS[key]
 
 
-def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
+def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type='Total'):
     key = ('casos_nuevos_cumulativo_t', yaxis_type, value_type)
 
     if key not in FIGS:
@@ -445,17 +444,30 @@ dash_app.layout = html.Div(className='container', children=[
     # ]),
 
     # ===========
-    # Gráfico 0. Evolución de casos totales por región
+    # Gráfico 0. Casos nuevos confirmados por región
     # ===========
 
-    html.H2(className='mt-4', children='Evolución de casos confirmados por región'),
+    html.H2(id='casos-nuevos', className='mt-4',
+            children='Casos nuevos confirmados por región'),
 
     dcc.Markdown('''
-        Este gráfico ha sido utilizado en el mundo para contrastar la evolución de la pandemia en distintos
-        países y regiones. En el eje horizontal se cuentan días desde haber alcanzado 10 casos confirmados.
+    Opciones:
     '''),
 
-    dcc.Graph(id='graph_casos_totales_evolucion', figure=make_fig_casos_totales_evolucion()),
+    dbc.Form(inline=True, children=[
+        dbc.FormGroup(className="mr-3", children=[
+            dcc.RadioItems(
+                id='graph_casos_nuevos_cumulativo_t-value-type',
+                className='form-check form-check-inline',
+                options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
+                value='Total',
+                labelStyle={'display': 'inline-block'},
+                labelClassName='form-check-label mr-2'
+            )
+        ])
+    ]),
+
+    dcc.Graph(id='graph_casos_nuevos_cumulativo_t', figure=make_fig_casos_nuevos_cumulativo_t()),
 
     # ===========
     # Reporte ejecutivo
@@ -613,30 +625,17 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_casos_totales_cumulativo_t', figure=make_fig_casos_totales_cumulativo_t()),
 
     # ===========
-    # Gráfico 4. Casos nuevos confirmados por región
+    # Gráfico 4. Evolución de casos totales por región
     # ===========
 
-    html.H2(id='casos-nuevos', className='mt-4',
-            children='Gráfico 4. Casos nuevos confirmados por región'),
+    # html.H2(className='mt-4', children='Evolución de casos confirmados por región'),
 
-    dcc.Markdown('''
-    Opciones:
-    '''),
+    # dcc.Markdown('''
+    #     Este gráfico ha sido utilizado en el mundo para contrastar la evolución de la pandemia en distintos
+    #     países y regiones. En el eje horizontal se cuentan días desde haber alcanzado 10 casos confirmados.
+    # '''),
 
-    dbc.Form(inline=True, children=[
-        dbc.FormGroup(className="mr-3", children=[
-            dcc.RadioItems(
-                id='graph_casos_nuevos_cumulativo_t-value-type',
-                className='form-check form-check-inline',
-                options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
-                value=POR_MIL_HAB,
-                labelStyle={'display': 'inline-block'},
-                labelClassName='form-check-label mr-2'
-            )
-        ])
-    ]),
-
-    dcc.Graph(id='graph_casos_nuevos_cumulativo_t', figure=make_fig_casos_nuevos_cumulativo_t()),
+    # dcc.Graph(id='graph_casos_totales_evolucion', figure=make_fig_casos_totales_evolucion()),
 
     # ===========
     # Gráfico 5. Tests PCR aplicados
