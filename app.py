@@ -150,7 +150,8 @@ def prepare_report():
 
 POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
-date_day = 24
+date_day = 1
+date_month = 'mayo'
 FIGS = {}
 
 
@@ -173,7 +174,7 @@ def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Muertes acumulados por región ({date_day} abril)',
+            'title': f'Muertes acumulados por región ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -200,7 +201,7 @@ def make_fig_fallecidos_etario_t():
         fig.add_trace(bar)
 
         fig.layout = {
-            'title': f'Muertes confirmadas por rango etario ({date_day} abril)',
+            'title': f'Muertes confirmadas por rango etario ({date_day} {date_month})',
             'xaxis': {'title': 'Rango etario'},
             'yaxis': {
                 'title': yaxis_title,
@@ -232,7 +233,7 @@ def make_fig_casos_totales_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Casos confirmados acumulados por región ({date_day} abril)',
+            'title': f'Casos confirmados acumulados por región ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -260,7 +261,7 @@ def make_fig_casos_totales_evolucion():
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Evolución de casos confirmados por región ({date_day} abril)',
+            'title': f'Evolución de casos confirmados por región ({date_day} {date_month})',
             'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
             'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
             'height': 520
@@ -289,7 +290,7 @@ def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_H
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Casos nuevos confirmados por región ({date_day} abril)',
+            'title': f'Casos nuevos confirmados por región ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -321,7 +322,7 @@ def make_fig_uci_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Pacientes en UCI por región ({date_day} abril)',
+            'title': f'Pacientes en UCI por región ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -353,7 +354,7 @@ def make_fig_pcr_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Tests PCR aplicados por región ({date_day} abril)',
+            'title': f'Tests PCR aplicados por región ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -409,7 +410,7 @@ def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Casos nuevos por cada test ({date_day} abril)',
+            'title': f'Casos nuevos por cada test ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -437,6 +438,12 @@ dash_app.layout = html.Div(className='container', children=[
     Creado por [@gdiazc](https://twitter.com/gdiazc).
     '''),
 
+    # dbc.Alert(color='danger', children=[
+    #     'Anuncio: Los datos y visualizaciones de esta página están desactualizados. Esto debido a que la fuente de datos del ',
+    #     html.A('@min_ciencia', href='https://twitter.com/min_ciencia', className='alert-link'),
+    #     ' ha dejado de actualizarse.'
+    # ]),
+
     # ===========
     # Gráfico 0. Evolución de casos totales por región
     # ===========
@@ -454,7 +461,7 @@ dash_app.layout = html.Div(className='container', children=[
     # Reporte ejecutivo
     # ===========
 
-    html.H2(id='reporte', className='mt-4', children=f'Reporte ejecutivo {date_day} abril'),
+    html.H2(id='reporte', className='mt-4', children=f'Reporte ejecutivo {date_day} {date_month}'),
 
     dcc.Markdown('''
     Cifras importantes del día, actualizadas **automáticamente** (nota: las cifras se actualizan
