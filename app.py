@@ -5,10 +5,15 @@ import dash
 import dash_core_components as dcc
 import dash_html_components as html
 import dash_bootstrap_components as dbc
+from flask_caching import Cache
 import pandas as pd
 import plotly.graph_objects as go
 
 from dash.dependencies import Input, Output
+
+from constants import URLS, COMUNA_TO_REGION, REGION_TO_POPULATION, MARKER_SYMBOLS
+import data_client
+import plotting
 
 
 metas = [
@@ -23,64 +28,24 @@ metas = [
 
 dash_app = dash.Dash(__name__, meta_tags=metas, external_stylesheets=[dbc.themes.BOOTSTRAP])
 dash_app.title = 'obs-covid chile'
-
 app = dash_app.server
 
-POPULATION = {
-    'Arica y Parinacota': 226_068,
-    'Tarapacá': 581_802,
-    'Antofagasta': 607_534,
-    'Atacama': 286_168,
-    'Coquimbo': 757_586,
-    'Valparaíso': 1_815_902,
-    'Metropolitana': 7_112_808,
-    'O’Higgins': 914_555,
-    'Maule': 1_044_950,
-    'Ñuble': 480_609,
-    'Biobío': 1_556_805,
-    'Araucanía': 957_224,
-    'Los Ríos': 384_837,
-    'Los Lagos': 828_708,
-    'Aysén': 103_158,
-    'Magallanes': 166_533,
-}
-POPULATION['Total'] = sum(POPULATION.values())
-
-MARKER_SYMBOLS = {
-    'Arica y Parinacota': 'triangle-up',
-    'Tarapacá': 'triangle-left',
-    'Antofagasta': 'triangle-down',
-    'Atacama': 'triangle-right',
-    'Coquimbo': 'triangle-ne',
-    'Valparaíso': 'triangle-sw',
-    'Metropolitana': 'star',
-    'O’Higgins': 'hexagram',
-    'Maule': 'star-diamond',
-    'Ñuble': 'diamond-tall',
-    'Biobío': 'diamond-wide',
-    'Araucanía': 'star-triangle-up',
-    'Los Ríos': 'star-triangle-down',
-    'Los Lagos': 'star-square',
-    'Aysén': 'bowtie',
-    'Magallanes': 'hourglass',
-    'Total': 'x'
-}
-
-URLS = {
-    'casos_totales_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto3/CasosTotalesCumulativo_T.csv',
-    'casos_nuevos_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto13/CasosNuevosCumulativo_T.csv',
-    'uci_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto8/UCI_T.csv',
-    'numero_ventiladores_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto20/NumeroVentiladores_T.csv',
-    'pcr_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto7/PCR_T.csv',
-    'fallecidos_cumulativo_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto14/FallecidosCumulativo_T.csv',
-    'fallecidos_etario_t': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto10/FallecidosEtario_T.csv',
-}
+cache = Cache(app, config={
+    # try 'filesystem' if you don't want to setup redis
+    'CACHE_TYPE': 'filesystem',
+    # 'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
+    'CACHE_DIR': 'tmp/'
+})
+CACHE_TIMEOUT = 12 * 60 * 60  # 12 hours
 
 DFS = {}
 
+# casos acumulados por comuna:
+DFS['p1_casos_acumulados_comuna'] = data_client.download_p1_casos_acumulados_comuna()
+
 # casos_totales_cumulativo_t
 DFS['casos_totales_cumulativo_t'] = pd.read_csv(URLS['casos_totales_cumulativo_t'], index_col='Region')
-DFS['casos_totales_cumulativo_t_per_k'] = DFS['casos_totales_cumulativo_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+DFS['casos_totales_cumulativo_t_per_k'] = DFS['casos_totales_cumulativo_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
 
 
 # casos_totales_evolucion
@@ -103,7 +68,7 @@ DFS['casos_totales_evolucion'] = DFS['casos_totales_cumulativo_t'].apply(lambda 
 
 # fallecidos_cumulativo_t
 DFS['fallecidos_cumulativo_t'] = pd.read_csv(URLS['fallecidos_cumulativo_t'], index_col='Region')
-DFS['fallecidos_cumulativo_t_per_k'] = DFS['fallecidos_cumulativo_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+DFS['fallecidos_cumulativo_t_per_k'] = DFS['fallecidos_cumulativo_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
 
 # fallecidos_etario_t
 DFS['fallecidos_etario_t'] = pd.read_csv(URLS['fallecidos_etario_t'], index_col='Grupo de edad')
@@ -112,11 +77,11 @@ DFS['fallecidos_etario_t'] = pd.read_csv(URLS['fallecidos_etario_t'], index_col=
 DFS['uci_t'] = pd.read_csv(URLS['uci_t'], index_col='Region')
 DFS['uci_t'] = DFS['uci_t'].loc['2020-04-01':, :]  # type: ignore
 DFS['uci_t']['Total'] = DFS['uci_t'].sum(axis=1)
-DFS['uci_t_per_k'] = DFS['uci_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+DFS['uci_t_per_k'] = DFS['uci_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
 
 # casos_nuevos_cumulativo_t
 DFS['casos_nuevos_cumulativo_t'] = pd.read_csv(URLS['casos_nuevos_cumulativo_t'], index_col='Region')
-DFS['casos_nuevos_cumulativo_t_per_k'] = DFS['casos_nuevos_cumulativo_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+DFS['casos_nuevos_cumulativo_t_per_k'] = DFS['casos_nuevos_cumulativo_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
 
 # NumeroVentiladores_T
 DFS['numero_ventiladores_t'] = pd.read_csv(URLS['numero_ventiladores_t'], index_col='Ventiladores')
@@ -126,10 +91,10 @@ DFS['numero_ventiladores_t'] = DFS['numero_ventiladores_t'].drop(columns=['dispo
 DFS['pcr_t'] = pd.read_csv(URLS['pcr_t'], index_col='Region', na_values='-')
 DFS['pcr_t'] = DFS['pcr_t'].loc['2020-04-09':, :]  # type: ignore
 DFS['pcr_t']['Total'] = DFS['pcr_t'].sum(axis=1)
-DFS['pcr_t_per_k'] = DFS['pcr_t'].apply(lambda col: col * 1_000.0 / POPULATION[col.name])
+DFS['pcr_t_per_k'] = DFS['pcr_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
 
 # casos_nuevos_per_test
-DFS['casos_nuevos_per_test'] = (DFS['casos_nuevos_cumulativo_t'] / DFS['pcr_t']).loc['2020-04-09':, :] * 100.0   # type: ignore
+DFS['casos_nuevos_per_test'] = (DFS['casos_nuevos_cumulativo_t'] / DFS['pcr_t']).loc['2020-04-09':, :]  # type: ignore
 
 
 def prepare_report():
@@ -149,7 +114,7 @@ def prepare_report():
 
 POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
-date_day = 2
+date_day = 3
 date_month = 'mayo'
 FIGS = {}
 
@@ -395,7 +360,7 @@ def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
     if key not in FIGS:
         data = DFS['casos_nuevos_per_test']
 
-        yaxis_title = 'Casos nuevos por cada test'
+        yaxis_title = 'Tasa de tests positivos [%]'
         yaxis_type = 'linear'
 
         fig = go.Figure()
@@ -414,10 +379,12 @@ def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
             'yaxis': {
                 'title': yaxis_title,
                 'type': yaxis_type,
-                'range': [0.0, 50.0],
+                'range': [0.0, 0.5],
             },
-            'height': 520
+            'height': 520,
+            'yaxis_tickformat': '%',
         }
+
 
         FIGS[key] = fig
     return FIGS[key]
@@ -436,12 +403,6 @@ dash_app.layout = html.Div(className='container', children=[
 
     Creado por [@gdiazc](https://twitter.com/gdiazc).
     '''),
-
-    # dbc.Alert(color='danger', children=[
-    #     'Anuncio: Los datos y visualizaciones de esta página están desactualizados. Esto debido a que la fuente de datos del ',
-    #     html.A('@min_ciencia', href='https://twitter.com/min_ciencia', className='alert-link'),
-    #     ' ha dejado de actualizarse.'
-    # ]),
 
     # ===========
     # Gráfico 0. Casos nuevos confirmados por región
@@ -638,10 +599,10 @@ dash_app.layout = html.Div(className='container', children=[
     # dcc.Graph(id='graph_casos_totales_evolucion', figure=make_fig_casos_totales_evolucion()),
 
     # ===========
-    # Gráfico 5. Tests PCR aplicados
+    # Gráfico 4. Tests PCR aplicados
     # ===========
 
-    html.H2(id='testeo', className='mt-4', children='Gráfico 5. Tests PCR aplicados'),
+    html.H2(id='testeo', className='mt-4', children='Gráfico 4. Tests PCR aplicados'),
 
     dcc.Markdown('''
         Los datos sobre tests PCR aplicados tienen muchos vacíos, lo que se traduce en líneas disconexas en el gráfico.
@@ -665,20 +626,57 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_pcr_t', figure=make_fig_pcr_t()),
 
     # ===========
-    # Gráfico 6. Casos nuevos por cada test
+    # Gráfico 5. Tasa de tests positivos nuevos por cada test
     # ===========
 
-    html.H2(className='mt-4', children='Gráfico 6. Casos nuevos por cada test'),
+    html.H2(className='mt-4', children='Gráfico 5. Tasa de tests positivos'),
 
     dcc.Markdown('''
-    Casos nuevos divididos en el número de tests que se realizaron.
+    Casos confirmados nuevos divididos en el número de tests que se realizaron.
 
     **Nota:** Este gráfico asume que todos los nuevos casos son confirmados a través de tests PCR.
     '''),
 
     dcc.Graph(id='graph_casos_nuevos_per_test', figure=make_fig_casos_nuevos_per_test()),
 
+    # ===========
+    # Gráfico 6. Casos acumulados por comuna
+    # ===========
+
+    html.H2(className='mt-4', children='Gráfico 6. Casos acumulados por comuna'),
+
+    dcc.Markdown('''
+    **Nota:** Sólo se muestran comunas que tienen al menos 1 caso acumulado.
+
+    Opciones:
+    '''),
+
+    dbc.Form(inline=True, children=[
+        dbc.FormGroup(className="mr-3", children=[
+            dbc.Label('Regiones:', html_for='graph_p1_casos_acumulados_comuna'),
+            dcc.Dropdown(
+                id='graph_p1_casos_acumulados_comuna-region',
+                options=[
+                    {'label': region, 'value': region}
+                    for region in REGION_TO_POPULATION if region != 'Total'
+                ],
+                value=['Metropolitana', 'Valparaíso'],
+                multi=True
+            ),
+        ])
+    ]),
+
+    dcc.Graph(id='graph_p1_casos_acumulados_comuna', figure=plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month)),
+
 ])
+
+
+@dash_app.callback(
+    Output('graph_p1_casos_acumulados_comuna', 'figure'),
+    [Input('graph_p1_casos_acumulados_comuna-region', 'value')])
+@cache.memoize(timeout=CACHE_TIMEOUT)
+def update_graph_p1_casos_acumulados_comuna(regions):
+    return plotting.make_fig_p1_casos_acumulados_comuna(DFS, date_day, date_month, regions=regions)
 
 
 @dash_app.callback(
