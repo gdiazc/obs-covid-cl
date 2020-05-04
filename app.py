@@ -30,13 +30,13 @@ dash_app = dash.Dash(__name__, meta_tags=metas, external_stylesheets=[dbc.themes
 dash_app.title = 'obs-covid chile'
 app = dash_app.server
 
-cache = Cache(app, config={
-    # try 'filesystem' if you don't want to setup redis
-    'CACHE_TYPE': 'filesystem',
-    # 'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
-    'CACHE_DIR': 'tmp/'
-})
-CACHE_TIMEOUT = 12 * 60 * 60  # 12 hours
+# cache = Cache(app, config={
+#     # try 'filesystem' if you don't want to setup redis
+#     'CACHE_TYPE': 'filesystem',
+#     # 'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
+#     'CACHE_DIR': 'tmp/'
+# })
+# CACHE_TIMEOUT = 12 * 60 * 60  # 12 hours
 
 DFS = {}
 
@@ -374,7 +374,7 @@ def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
             fig.add_trace(scatter)
 
         fig.layout = {
-            'title': f'Casos nuevos por cada test ({date_day} {date_month})',
+            'title': f'Tasa de tests positivos ({date_day} {date_month})',
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': yaxis_title,
@@ -674,9 +674,9 @@ dash_app.layout = html.Div(className='container', children=[
 @dash_app.callback(
     Output('graph_p1_casos_acumulados_comuna', 'figure'),
     [Input('graph_p1_casos_acumulados_comuna-region', 'value')])
-@cache.memoize(timeout=CACHE_TIMEOUT)
+# @cache.memoize(timeout=CACHE_TIMEOUT)
 def update_graph_p1_casos_acumulados_comuna(regions):
-    return plotting.make_fig_p1_casos_acumulados_comuna(DFS, date_day, date_month, regions=regions)
+    return plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month, regions=regions)
 
 
 @dash_app.callback(
