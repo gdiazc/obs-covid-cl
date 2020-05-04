@@ -19,7 +19,7 @@ def make_fig_p1_casos_acumulados_comuna(dfs, figs, date_day, date_month,
         for col in data.columns:
             region = COMUNA_TO_REGION[col]
             casos = data[col][-1]
-            if region in regions and casos > 0:
+            if region in regions and casos >= 10:
                 scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers',
                                     name=col, marker_symbol=MARKER_SYMBOLS[region], marker_size=8)
                 fig.add_trace(scatter)
