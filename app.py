@@ -247,6 +247,10 @@ def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type='Total'):
         yaxis_title = 'Casos confirmados nuevos' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
         yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
+        last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+        start_date = last_date - dt.timedelta(days=60)
+        end_date = last_date + dt.timedelta(days=2)
+
         fig = go.Figure()
         for col in data.columns:
             scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
@@ -258,10 +262,13 @@ def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type='Total'):
 
         fig.layout = {
             'title': f'Casos nuevos confirmados por región ({date_day} {date_month})',
-            'xaxis': {'title': 'Fecha'},
+            'xaxis': {
+                'title': 'Fecha',
+                'range': (start_date, end_date),
+            },
             'yaxis': {
                 'title': yaxis_title,
-                'type': yaxis_type
+                'type': yaxis_type,
             },
             'height': 520
         }
@@ -685,8 +692,6 @@ dash_app.layout = html.Div(className='container', children=[
     dcc.Graph(id='graph_p1_casos_acumulados_comuna', figure=plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month)),
 
 ])
-
-
 
 
 @dash_app.callback(
