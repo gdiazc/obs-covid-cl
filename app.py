@@ -11,7 +11,8 @@ import plotly.graph_objects as go
 
 from dash.dependencies import Input, Output
 
-from constants import URLS, COMUNA_TO_REGION, REGION_TO_POPULATION, MARKER_SYMBOLS
+from constants import URLS, MARKER_SYMBOLS, COMUNAS_DROPDOWN_OPTIONS
+from constants import REGIONS_SORTED, REGION_TO_POPULATION, COMUNA_TO_REGION
 import data_client
 import plotting
 
@@ -109,12 +110,14 @@ def prepare_report():
     report['tests_today'] = DFS['pcr_t'].iloc[-1]['Total']
     report['tests_yesterday'] = DFS['pcr_t'].iloc[-2]['Total']
     report['tests_diff'] = report['tests_today'] - report['tests_yesterday']
+    report['top_10_comunas_total'] = [comuna for comuna, cases in sorted(DFS['p1_casos_acumulados_comuna'].iloc[-1, :].to_dict().items(), key=lambda item: -item[1])[:10]]
+
     return report
 
 
 POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
-date_day = 3
+date_day = 6
 date_month = 'mayo'
 FIGS = {}
 
@@ -157,7 +160,7 @@ def make_fig_fallecidos_etario_t():
     if key not in FIGS:
         data = DFS['fallecidos_etario_t']
 
-        yaxis_title = 'Número de muertes confirmadas'
+        yaxis_title = 'Muertes confirmadas'
         yaxis_type = 'linear'
 
         fig = go.Figure()
@@ -165,7 +168,7 @@ def make_fig_fallecidos_etario_t():
         fig.add_trace(bar)
 
         fig.layout = {
-            'title': f'Muertes confirmadas por rango etario ({date_day} {date_month})',
+            'title': f'Muertes totales por rango etario (hasta {date_day} {date_month})',
             'xaxis': {'title': 'Rango etario'},
             'yaxis': {
                 'title': yaxis_title,
@@ -498,7 +501,7 @@ dash_app.layout = html.Div(className='container', children=[
     # ===========
 
     html.H3(id='muertes-por-rango-etario', className='mt-2',
-            children='Gráfico 1b. Muertes por rango etario'),
+            children='Gráfico 1b. Muertes acumuladas por rango etario'),
 
     dcc.Markdown('''
     '''),
@@ -646,21 +649,34 @@ dash_app.layout = html.Div(className='container', children=[
     html.H2(className='mt-4', children='Gráfico 6. Casos acumulados por comuna'),
 
     dcc.Markdown('''
-    **Nota:** Sólo se muestran comunas que tienen al menos 1 caso acumulado.
+    Inicialmente, el gráfico muestra las 10 comunas con más casos acumulados hasta la fecha.
 
-    Opciones:
+    **Nota:** Sólo se muestran comunas que tienen al menos 10 casos acumulados.
     '''),
 
-    dbc.Form(inline=True, children=[
+    dbc.Form(  # inline=True,
+    children=[
         dbc.FormGroup(className="mr-3", children=[
-            dbc.Label('Regiones:', html_for='graph_p1_casos_acumulados_comuna'),
+            dbc.Label(className='mr-2', html_for='graph_p1_casos_acumulados_comuna-regions', children='Agregar regiones:'),
             dcc.Dropdown(
-                id='graph_p1_casos_acumulados_comuna-region',
-                options=[
-                    {'label': region, 'value': region}
-                    for region in REGION_TO_POPULATION if region != 'Total'
-                ],
-                value=['Metropolitana', 'Valparaíso'],
+                id='graph_p1_casos_acumulados_comuna-regions',
+                style={'min-width': '20em'},
+                options=[{'label': region, 'value': region} for region in REGIONS_SORTED],
+                value=[],
+                multi=True
+            ),
+        ])
+    ]),
+
+    dbc.Form(  # inline=True,
+    children=[
+        dbc.FormGroup(className="mr-3", children=[
+            dbc.Label(className='mr-2', html_for='graph_p1_casos_acumulados_comuna-comunas', children='Agregar comunas:'),
+            dcc.Dropdown(
+                id='graph_p1_casos_acumulados_comuna-comunas',
+                style={'min-width': '20em'},
+                options=[{'label': f'{COMUNA_TO_REGION[comuna]}: {comuna}', 'value': comuna} for comuna in COMUNA_TO_REGION],
+                value=REPORT['top_10_comunas_total'],
                 multi=True
             ),
         ])
@@ -671,12 +687,15 @@ dash_app.layout = html.Div(className='container', children=[
 ])
 
 
+
+
 @dash_app.callback(
     Output('graph_p1_casos_acumulados_comuna', 'figure'),
-    [Input('graph_p1_casos_acumulados_comuna-region', 'value')])
+    [Input('graph_p1_casos_acumulados_comuna-regions', 'value'),
+     Input('graph_p1_casos_acumulados_comuna-comunas', 'value')])
 # @cache.memoize(timeout=CACHE_TIMEOUT)
-def update_graph_p1_casos_acumulados_comuna(regions):
-    return plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month, regions=regions)
+def update_graph_p1_casos_acumulados_comuna(regions, comunas):
+    return plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month, regions=regions, comunas=comunas)
 
 
 @dash_app.callback(
