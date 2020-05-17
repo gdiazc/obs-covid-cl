@@ -117,7 +117,7 @@ def prepare_report():
 
 POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
-date_day = 16
+date_day = 17
 date_month = 'mayo'
 FIGS = {}
 
@@ -355,7 +355,7 @@ def make_fig_numero_ventiladores_t():
             'xaxis': {'title': 'Fecha'},
             'yaxis': {
                 'title': 'Número de ventiladores',
-                'range': [0, 2000]
+                'range': [0, 2500]
             },
             'height': 520
         }
