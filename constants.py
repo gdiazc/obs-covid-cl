@@ -1,3 +1,5 @@
+POR_MIL_HAB = 'Por Mil Hab.'
+
 URLS = {
     # comunales:
     'p1_casos_acumulados_comuna': 'https://raw.githubusercontent.com/MinCiencia/Datos-COVID19/master/output/producto1/Covid-19_T.csv',

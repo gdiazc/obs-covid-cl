@@ -1,18 +1,18 @@
 # -*- coding: utf-8 -*-
 import datetime as dt
 
+from dash.dependencies import Input, Output
+from flask_caching import Cache
 import dash
+import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-import dash_bootstrap_components as dbc
-from flask_caching import Cache
 import pandas as pd
 import plotly.graph_objects as go
 
-from dash.dependencies import Input, Output
-
 from constants import URLS, MARKER_SYMBOLS, COMUNAS_DROPDOWN_OPTIONS
 from constants import REGIONS_SORTED, REGION_TO_POPULATION, COMUNA_TO_REGION
+from constants import POR_MIL_HAB
 import data_client
 import plotting
 
@@ -115,166 +115,10 @@ def prepare_report():
     return report
 
 
-POR_MIL_HAB = 'Por Mil Hab.'
 REPORT = prepare_report()
 date_day = 20
 date_month = 'mayo'
 FIGS = {}
-
-
-def make_fig_fallecidos_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    key = ('fallecidos_cumulativo_t', yaxis_type, value_type)
-
-    if key not in FIGS:
-        data = DFS['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['fallecidos_cumulativo_t']
-
-        yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
-
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-            if col == 'Total':
-                scatter.marker.color = 'black'
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Muertes acumulados por región ({date_day} {date_month})',
-            'xaxis': {'title': 'Fecha'},
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type
-            },
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_fallecidos_etario_t():
-    key = ('fallecidos_etario_t', '', '')
-
-    if key not in FIGS:
-        data = DFS['fallecidos_etario_t']
-
-        yaxis_title = 'Muertes confirmadas'
-        yaxis_type = 'linear'
-
-        fig = go.Figure()
-        bar = go.Bar(x=data.columns.values, y=data.iloc[-1, :].values, name='Muertes totales')
-        fig.add_trace(bar)
-
-        fig.layout = {
-            'title': f'Muertes totales por rango etario (hasta {date_day} {date_month})',
-            'xaxis': {'title': 'Rango etario'},
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type
-            },
-            'height': 400
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_casos_totales_cumulativo_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    key = ('casos_totales_cumulativo_t', yaxis_type, value_type)
-
-    if key not in FIGS:
-        data = DFS['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_totales_cumulativo_t']
-
-        yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
-
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-            if col == 'Total':
-                scatter.marker.color = 'black'
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Casos confirmados acumulados por región ({date_day} {date_month})',
-            'xaxis': {'title': 'Fecha'},
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type
-            },
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_casos_totales_evolucion():
-    key = ('casos_totales_evolucion', '', '')
-
-    if key not in FIGS:
-        data = DFS['casos_totales_evolucion']
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-            if col == 'Total':
-                scatter.marker.color = 'black'
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Evolución de casos confirmados por región ({date_day} {date_month})',
-            'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
-            'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_casos_nuevos_cumulativo_t(yaxis_type='Lineal', value_type='Total'):
-    key = ('casos_nuevos_cumulativo_t', yaxis_type, value_type)
-
-    if key not in FIGS:
-        data = DFS['casos_nuevos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else DFS['casos_nuevos_cumulativo_t']
-
-        yaxis_title = 'Casos confirmados nuevos' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
-
-        last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
-        start_date = last_date - dt.timedelta(days=60)
-        end_date = last_date + dt.timedelta(days=2)
-
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-            if col == 'Total':
-                scatter.marker.color = 'black'
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Casos nuevos confirmados por región ({date_day} {date_month})',
-            'xaxis': {
-                'title': 'Fecha',
-                'range': (start_date, end_date),
-            },
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type,
-            },
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
 
 
 def make_fig_uci_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
@@ -450,7 +294,11 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                     ])
                 ]),
 
-                dcc.Graph(id='graph_casos_nuevos_cumulativo_t', figure=make_fig_casos_nuevos_cumulativo_t()),
+                dcc.Graph(id='graph_casos_nuevos_cumulativo_t',
+                    figure=plotting.make_fig_casos_nuevos_cumulativo_t(
+                        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type='Total'
+                    )
+                ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -527,7 +375,12 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 ])
             ]),
 
-            dcc.Graph(id='graph_fallecidos_cumulativo_t', figure=make_fig_fallecidos_cumulativo_t()),
+            dcc.Graph(
+                id='graph_fallecidos_cumulativo_t',
+                figure=plotting.make_fig_fallecidos_cumulativo_t(
+                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB
+                )
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -546,7 +399,9 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             dcc.Markdown('''
             '''),
 
-            dcc.Graph(id='graph_fallecidos_etario_t', figure=make_fig_fallecidos_etario_t()),
+            dcc.Graph(id='graph_fallecidos_etario_t',
+                figure=plotting.make_fig_fallecidos_etario_t(DFS, FIGS, date_day, date_month)
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -646,7 +501,11 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 ])
             ]),
 
-            dcc.Graph(id='graph_casos_totales_cumulativo_t', figure=make_fig_casos_totales_cumulativo_t()),
+            dcc.Graph(id='graph_casos_totales_cumulativo_t',
+                figure=plotting.make_fig_casos_totales_cumulativo_t(
+                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB
+                )
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -780,14 +639,16 @@ dash_app.layout = html.Div(className='container-fluid', children=[
      Input('graph_p1_casos_acumulados_comuna-comunas', 'value')])
 # @cache.memoize(timeout=CACHE_TIMEOUT)
 def update_graph_p1_casos_acumulados_comuna(regions, comunas):
-    return plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month, regions=regions, comunas=comunas)
+    return plotting.make_fig_p1_casos_acumulados_comuna(
+        DFS, FIGS, date_day, date_month, regions=regions, comunas=comunas)
 
 
 @dash_app.callback(
     Output('graph_fallecidos_cumulativo_t', 'figure'),
     [Input('graph_fallecidos_cumulativo_t-value-type', 'value')])
 def update_graph_fallecidos_cumulativo_t(value_type):
-    return make_fig_fallecidos_cumulativo_t(value_type=value_type)
+    return plotting.make_fig_fallecidos_cumulativo_t(
+        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
@@ -795,14 +656,18 @@ def update_graph_fallecidos_cumulativo_t(value_type):
     [Input('graph_casos_totales_cumulativo_t-yaxis-type', 'value'),
      Input('graph_casos_totales_cumulativo_t-value-type', 'value')])
 def update_graph_casos_totales_cumulativo_t(yaxis_type, value_type):
-    return make_fig_casos_totales_cumulativo_t(yaxis_type=yaxis_type, value_type=value_type)
+    return plotting.make_fig_casos_totales_cumulativo_t(
+        DFS, FIGS, date_day, date_month, yaxis_type=yaxis_type, value_type=value_type
+    )
 
 
 @dash_app.callback(
     Output('graph_casos_nuevos_cumulativo_t', 'figure'),
     [Input('graph_casos_nuevos_cumulativo_t-value-type', 'value')])
 def update_graph_casos_nuevos_cumulativo_t(value_type):
-    return make_fig_casos_nuevos_cumulativo_t(value_type=value_type)
+    return plotting.make_fig_casos_nuevos_cumulativo_t(
+        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type
+    )
 
 
 @dash_app.callback(
