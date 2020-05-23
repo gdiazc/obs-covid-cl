@@ -116,7 +116,7 @@ def prepare_report():
 
 
 REPORT = prepare_report()
-date_day = 20
+date_day = 22
 date_month = 'mayo'
 FIGS = {}
 
