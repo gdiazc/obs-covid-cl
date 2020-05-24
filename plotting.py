@@ -220,3 +220,132 @@ def make_fig_casos_nuevos_cumulativo_t(
 
         figs_cache[key] = fig
     return figs_cache[key]
+
+
+def make_fig_uci_t(
+    dfs: pd.DataFrame, figs_cache: dict, date_day: int, date_month: str, *,
+    yaxis_type: str, value_type: str):
+    key = ('uci_t', yaxis_type, value_type)
+
+    if key not in figs_cache:
+        data = dfs['uci_t_per_k'] if value_type == POR_MIL_HAB else dfs['uci_t']
+
+        yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
+
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Pacientes en UCI por región ({date_day} {date_month})',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        figs_cache[key] = fig
+    return figs_cache[key]
+
+
+def make_fig_pcr_t(
+    dfs: pd.DataFrame, figs_cache: dict, date_day: int, date_month: str, *,
+    yaxis_type: str, value_type: str):
+    key = ('pcr_t', yaxis_type, value_type)
+
+    if key not in figs_cache:
+        data = dfs['pcr_t_per_k'] if value_type == POR_MIL_HAB else dfs['pcr_t']
+
+        yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
+
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+            if col == 'Total':
+                scatter.marker.color = 'black'
+
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Tests PCR aplicados por región ({date_day} {date_month})',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type
+            },
+            'height': 520
+        }
+
+        figs_cache[key] = fig
+    return figs_cache[key]
+
+
+def make_fig_numero_ventiladores_t(
+    dfs: pd.DataFrame, figs_cache: dict, date_day: int, date_month: str):
+    key = ('numero_ventiladores_t', '', '')
+
+    if key not in figs_cache:
+        data = dfs['numero_ventiladores_t']
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=data.index, y=data['ocupados'], mode='lines+markers', name='Ocupados', fill='tozeroy'))
+        fig.add_trace(go.Scatter(x=data.index, y=data['total'], mode='lines+markers', name='Total'))
+        fig.layout = {
+            'title': f'Uso de ventiladores',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': 'Número de ventiladores',
+                'range': [0, 2500]
+            },
+            'height': 520
+        }
+
+        figs_cache[key] = fig
+    return figs_cache[key]
+
+
+def make_fig_casos_nuevos_per_test(
+    dfs: pd.DataFrame, figs_cache: dict, date_day: int, date_month: str, *,
+    yaxis_type: str):
+    key = ('casos_nuevos_per_test', yaxis_type, '')
+
+    if key not in figs_cache:
+        data = dfs['casos_nuevos_per_test']
+
+        yaxis_title = 'Tasa de tests positivos [%]'
+        yaxis_type = 'linear'
+
+        fig = go.Figure()
+        for col in data.columns:
+            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
+                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10, visible='legendonly')
+            if col == 'Total':
+                scatter.marker.color = 'black'
+                scatter.visible = True
+
+            fig.add_trace(scatter)
+
+        fig.layout = {
+            'title': f'Tasa de tests positivos ({date_day} {date_month})',
+            'xaxis': {'title': 'Fecha'},
+            'yaxis': {
+                'title': yaxis_title,
+                'type': yaxis_type,
+                'range': [0.0, 0.5],
+            },
+            'height': 520,
+            'yaxis_tickformat': '%',
+        }
+
+        figs_cache[key] = fig
+    return figs_cache[key]

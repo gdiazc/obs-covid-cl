@@ -3,6 +3,7 @@ import datetime as dt
 
 from dash.dependencies import Input, Output
 from flask_caching import Cache
+from typing import Dict
 import dash
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -116,133 +117,9 @@ def prepare_report():
 
 
 REPORT = prepare_report()
-date_day = 20
+date_day = 21
 date_month = 'mayo'
-FIGS = {}
-
-
-def make_fig_uci_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    key = ('uci_t', yaxis_type, value_type)
-
-    if key not in FIGS:
-        data = DFS['uci_t_per_k'] if value_type == POR_MIL_HAB else DFS['uci_t']
-
-        yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
-
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-            if col == 'Total':
-                scatter.marker.color = 'black'
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Pacientes en UCI por región ({date_day} {date_month})',
-            'xaxis': {'title': 'Fecha'},
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type
-            },
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_pcr_t(yaxis_type='Lineal', value_type=POR_MIL_HAB):
-    key = ('pcr_t', yaxis_type, value_type)
-
-    if key not in FIGS:
-        data = DFS['pcr_t_per_k'] if value_type == POR_MIL_HAB else DFS['pcr_t']
-
-        yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
-        yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
-
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
-            if col == 'Total':
-                scatter.marker.color = 'black'
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Tests PCR aplicados por región ({date_day} {date_month})',
-            'xaxis': {'title': 'Fecha'},
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type
-            },
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_numero_ventiladores_t():
-    key = ('numero_ventiladores_t', '', '')
-
-    if key not in FIGS:
-        data = DFS['numero_ventiladores_t']
-
-        fig = go.Figure()
-        fig.add_trace(go.Scatter(x=data.index, y=data['ocupados'], mode='lines+markers', name='Ocupados', fill='tozeroy'))
-        fig.add_trace(go.Scatter(x=data.index, y=data['total'], mode='lines+markers', name='Total'))
-        fig.layout = {
-            'title': f'Uso de ventiladores',
-            'xaxis': {'title': 'Fecha'},
-            'yaxis': {
-                'title': 'Número de ventiladores',
-                'range': [0, 2500]
-            },
-            'height': 520
-        }
-
-        FIGS[key] = fig
-    return FIGS[key]
-
-
-def make_fig_casos_nuevos_per_test(yaxis_type='Lineal'):
-    key = ('casos_nuevos_per_test', yaxis_type, '')
-
-    if key not in FIGS:
-        data = DFS['casos_nuevos_per_test']
-
-        yaxis_title = 'Tasa de tests positivos [%]'
-        yaxis_type = 'linear'
-
-        fig = go.Figure()
-        for col in data.columns:
-            scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                 marker_symbol=MARKER_SYMBOLS[col], marker_size=10, visible='legendonly')
-            if col == 'Total':
-                scatter.marker.color = 'black'
-                scatter.visible = True
-
-            fig.add_trace(scatter)
-
-        fig.layout = {
-            'title': f'Tasa de tests positivos ({date_day} {date_month})',
-            'xaxis': {'title': 'Fecha'},
-            'yaxis': {
-                'title': yaxis_title,
-                'type': yaxis_type,
-                'range': [0.0, 0.5],
-            },
-            'height': 520,
-            'yaxis_tickformat': '%',
-        }
-
-
-        FIGS[key] = fig
-    return FIGS[key]
-
+FIGS: Dict[str, object] = {}
 
 dash_app.layout = html.Div(className='container-fluid', children=[
     dbc.Row(
@@ -436,7 +313,11 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 ])
             ]),
 
-            dcc.Graph(id='graph_uci_t', figure=make_fig_uci_t()),
+            dcc.Graph(id='graph_uci_t',
+                figure=plotting.make_fig_uci_t(
+                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB
+                )
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -455,7 +336,9 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             Por ahora sólo hay cifras disponibles para el total nacional.
             '''),
 
-            dcc.Graph(id='graph_numero_ventiladores_t', figure=make_fig_numero_ventiladores_t()),
+            dcc.Graph(id='graph_numero_ventiladores_t',
+                figure=plotting.make_fig_numero_ventiladores_t(DFS, FIGS, date_day, date_month)
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -552,7 +435,10 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 ])
             ]),
 
-            dcc.Graph(id='graph_pcr_t', figure=make_fig_pcr_t()),
+            dcc.Graph(id='graph_pcr_t',
+                figure=plotting.make_fig_pcr_t(
+                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB)
+                ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -573,7 +459,9 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             **Nota:** Este gráfico asume que todos los nuevos casos son confirmados a través de tests PCR.
             '''),
 
-            dcc.Graph(id='graph_casos_nuevos_per_test', figure=make_fig_casos_nuevos_per_test()),
+            dcc.Graph(id='graph_casos_nuevos_per_test',
+                figure=plotting.make_fig_casos_nuevos_per_test(DFS, FIGS, date_day, date_month, yaxis_type='Lineal')
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -674,14 +562,18 @@ def update_graph_casos_nuevos_cumulativo_t(value_type):
     Output('graph_pcr_t', 'figure'),
     [Input('graph_pcr_t-value-type', 'value')])
 def update_graph_pcr_t(value_type):
-    return make_fig_pcr_t(value_type=value_type)
+    return plotting.make_fig_pcr_t(
+        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type
+    )
 
 
 @dash_app.callback(
     Output('graph_uci_t', 'figure'),
     [Input('graph_uci_t-value-type', 'value')])
 def update_graph_uci_t(value_type):
-    return make_fig_uci_t(value_type=value_type)
+    return plotting.make_fig_uci_t(
+        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type
+    )
 
 
 if __name__ == '__main__':
