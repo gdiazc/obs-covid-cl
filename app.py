@@ -117,7 +117,7 @@ def prepare_report():
 
 
 REPORT = prepare_report()
-date_day = 21
+date_day = 22
 date_month = 'mayo'
 FIGS: Dict[str, object] = {}
 
