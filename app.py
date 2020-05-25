@@ -14,8 +14,8 @@ import plotly.graph_objects as go
 from constants import URLS, MARKER_SYMBOLS, COMUNAS_DROPDOWN_OPTIONS
 from constants import REGIONS_SORTED, REGION_TO_POPULATION, COMUNA_TO_REGION
 from constants import POR_MIL_HAB
+from plotting import FigCache
 import data_client
-import plotting
 
 
 metas = [
@@ -32,94 +32,30 @@ dash_app = dash.Dash(__name__, meta_tags=metas, external_stylesheets=[dbc.themes
 dash_app.title = 'obs-covid chile'
 app = dash_app.server
 
-# cache = Cache(app, config={
-#     # try 'filesystem' if you don't want to setup redis
-#     'CACHE_TYPE': 'filesystem',
-#     # 'CACHE_REDIS_URL': os.environ.get('REDIS_URL', '')
-#     'CACHE_DIR': 'tmp/'
-# })
-# CACHE_TIMEOUT = 12 * 60 * 60  # 12 hours
-
-DFS = {}
-
-# casos acumulados por comuna:
-DFS['p1_casos_acumulados_comuna'] = data_client.download_p1_casos_acumulados_comuna()
-
-# casos_totales_cumulativo_t
-DFS['casos_totales_cumulativo_t'] = pd.read_csv(URLS['casos_totales_cumulativo_t'], index_col='Region')
-DFS['casos_totales_cumulativo_t_per_k'] = DFS['casos_totales_cumulativo_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
+df_cache = data_client.DataCache()
+fig_cache = FigCache(df_cache)
 
 
-# casos_totales_evolucion
-def get_start_days(df):
-    """Build a series with regions as an index, values being date at which 10 cases was reached."""
-    df_is_day_0 = ((df >= 1).astype(int).cumsum() == 1).astype(int)
-    start_days = df_is_day_0.apply(lambda col: df.index.values * col).sum(axis=0)
-    return start_days
-
-
-def days_to_shift(col):
-    earliest_date = dt.datetime.strptime('2020-03-03', '%Y-%m-%d')
-    return (earliest_date - dt.datetime.strptime(dias_iniciales[col.name], '%Y-%m-%d')).days
-
-
-dias_iniciales = get_start_days(DFS['casos_totales_cumulativo_t'])
-DFS['casos_totales_evolucion'] = DFS['casos_totales_cumulativo_t'].apply(lambda col: col.shift(days_to_shift(col)))\
-                                                                  .reset_index()\
-                                                                  .drop(columns=['Region'])
-
-# fallecidos_cumulativo_t
-DFS['fallecidos_cumulativo_t'] = pd.read_csv(URLS['fallecidos_cumulativo_t'], index_col='Region')
-DFS['fallecidos_cumulativo_t_per_k'] = DFS['fallecidos_cumulativo_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
-
-# fallecidos_etario_t
-DFS['fallecidos_etario_t'] = pd.read_csv(URLS['fallecidos_etario_t'], index_col='Grupo de edad')
-
-# uci_t
-DFS['uci_t'] = pd.read_csv(URLS['uci_t'], index_col='Region')
-DFS['uci_t'] = DFS['uci_t'].loc['2020-04-01':, :]  # type: ignore
-DFS['uci_t']['Total'] = DFS['uci_t'].sum(axis=1)
-DFS['uci_t_per_k'] = DFS['uci_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
-
-# casos_nuevos_cumulativo_t
-DFS['casos_nuevos_cumulativo_t'] = pd.read_csv(URLS['casos_nuevos_cumulativo_t'], index_col='Region')
-DFS['casos_nuevos_cumulativo_t_per_k'] = DFS['casos_nuevos_cumulativo_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
-
-# NumeroVentiladores_T
-DFS['numero_ventiladores_t'] = pd.read_csv(URLS['numero_ventiladores_t'], index_col='Ventiladores')
-DFS['numero_ventiladores_t'] = DFS['numero_ventiladores_t'].drop(columns=['disponibles'])
-
-# PCR_T
-DFS['pcr_t'] = pd.read_csv(URLS['pcr_t'], index_col='Region', na_values='-')
-DFS['pcr_t'] = DFS['pcr_t'].loc['2020-04-09':, :]  # type: ignore
-DFS['pcr_t']['Total'] = DFS['pcr_t'].sum(axis=1)
-DFS['pcr_t_per_k'] = DFS['pcr_t'].apply(lambda col: col * 1_000.0 / REGION_TO_POPULATION[col.name])
-
-# casos_nuevos_per_test
-DFS['casos_nuevos_per_test'] = (DFS['casos_nuevos_cumulativo_t'] / DFS['pcr_t']).loc['2020-04-09':, :]  # type: ignore
-
-
-def prepare_report():
+def prepare_report(dfs):
     report = {}
-    report['total_deaths'] = DFS['fallecidos_cumulativo_t']['Total'][-1]
-    report['deaths_today'] = DFS['fallecidos_cumulativo_t']['Total'][-1] - DFS['fallecidos_cumulativo_t']['Total'][-2]
-    report['top_3_deaths'] = sorted(DFS['fallecidos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_deaths_last_day'] = sorted(DFS['fallecidos_cumulativo_t'].diff().iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_uci'] = sorted(DFS['uci_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_new_cases'] = sorted(DFS['casos_nuevos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_new_cases_per_k'] = sorted(DFS['casos_nuevos_cumulativo_t_per_k'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['tests_today'] = DFS['pcr_t'].iloc[-1]['Total']
-    report['tests_yesterday'] = DFS['pcr_t'].iloc[-2]['Total']
+    report['total_deaths'] = dfs['fallecidos_cumulativo_t']['Total'][-1]
+    report['deaths_today'] = dfs['fallecidos_cumulativo_t']['Total'][-1] - dfs['fallecidos_cumulativo_t']['Total'][-2]
+    report['top_3_deaths'] = sorted(dfs['fallecidos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_deaths_last_day'] = sorted(dfs['fallecidos_cumulativo_t'].diff().iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_uci'] = sorted(dfs['uci_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_new_cases'] = sorted(dfs['casos_nuevos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['top_3_new_cases_per_k'] = sorted(dfs['casos_nuevos_cumulativo_t_per_k'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
+    report['tests_today'] = dfs['pcr_t'].iloc[-1]['Total']
+    report['tests_yesterday'] = dfs['pcr_t'].iloc[-2]['Total']
     report['tests_diff'] = report['tests_today'] - report['tests_yesterday']
-    report['top_10_comunas_total'] = [comuna for comuna, cases in sorted(DFS['p1_casos_acumulados_comuna'].iloc[-1, :].to_dict().items(), key=lambda item: -item[1])[:10]]
+    report['top_10_comunas_total'] = [comuna for comuna, cases in sorted(dfs['p1_casos_acumulados_comuna'].iloc[-1, :].to_dict().items(), key=lambda item: -item[1])[:10]]
 
     return report
 
 
-REPORT = prepare_report()
+REPORT = prepare_report(df_cache)
 date_day = 22
 date_month = 'mayo'
-FIGS: Dict[str, object] = {}
 
 dash_app.layout = html.Div(className='container-fluid', children=[
     dbc.Row(
@@ -172,9 +108,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 ]),
 
                 dcc.Graph(id='graph_casos_nuevos_cumulativo_t',
-                    figure=plotting.make_fig_casos_nuevos_cumulativo_t(
-                        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type='Total'
-                    )
+                    figure=fig_cache.get_fig('casos_nuevos_cumulativo_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type='Total')
                 ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -254,9 +188,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
             dcc.Graph(
                 id='graph_fallecidos_cumulativo_t',
-                figure=plotting.make_fig_fallecidos_cumulativo_t(
-                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB
-                )
+                figure=fig_cache.get_fig('fallecidos_cumulativo_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB)
             ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -277,7 +209,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             '''),
 
             dcc.Graph(id='graph_fallecidos_etario_t',
-                figure=plotting.make_fig_fallecidos_etario_t(DFS, FIGS, date_day, date_month)
+                figure=fig_cache.get_fig('fallecidos_etario_t', date_day=date_day, date_month=date_month)
             ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -314,9 +246,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             ]),
 
             dcc.Graph(id='graph_uci_t',
-                figure=plotting.make_fig_uci_t(
-                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB
-                )
+                figure=fig_cache.get_fig('uci_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB)
             ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -337,7 +267,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             '''),
 
             dcc.Graph(id='graph_numero_ventiladores_t',
-                figure=plotting.make_fig_numero_ventiladores_t(DFS, FIGS, date_day, date_month)
+                figure=fig_cache.get_fig('numero_ventiladores_t', date_day=date_day, date_month=date_month)
             ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -385,9 +315,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             ]),
 
             dcc.Graph(id='graph_casos_totales_cumulativo_t',
-                figure=plotting.make_fig_casos_totales_cumulativo_t(
-                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB
-                )
+                figure=fig_cache.get_fig('casos_totales_cumulativo_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB)
             ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -436,9 +364,8 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             ]),
 
             dcc.Graph(id='graph_pcr_t',
-                figure=plotting.make_fig_pcr_t(
-                    DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB)
-                ),
+                figure=fig_cache.get_fig('pcr_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=POR_MIL_HAB)
+            )
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -460,7 +387,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
             '''),
 
             dcc.Graph(id='graph_casos_nuevos_per_test',
-                figure=plotting.make_fig_casos_nuevos_per_test(DFS, FIGS, date_day, date_month, yaxis_type='Lineal')
+                figure=fig_cache.get_fig('casos_nuevos_per_test', date_day=date_day, date_month=date_month, yaxis_type='Lineal')
             ),
         ],
         lg={'size': 10, 'offset': 1},
@@ -510,8 +437,9 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 ])
             ]),
 
-            dcc.Graph(id='graph_p1_casos_acumulados_comuna', figure=plotting.make_fig_p1_casos_acumulados_comuna(DFS, FIGS, date_day, date_month)),
-
+            dcc.Graph(id='graph_p1_casos_acumulados_comuna',
+                figure=fig_cache.get_fig('p1_casos_acumulados_comuna', date_day=date_day, date_month=date_month, regions=[], comunas=[])
+            ),
         ],
         lg={'size': 10, 'offset': 1},
         sm={'size': 12, 'offset': 0},
@@ -525,18 +453,15 @@ dash_app.layout = html.Div(className='container-fluid', children=[
     Output('graph_p1_casos_acumulados_comuna', 'figure'),
     [Input('graph_p1_casos_acumulados_comuna-regions', 'value'),
      Input('graph_p1_casos_acumulados_comuna-comunas', 'value')])
-# @cache.memoize(timeout=CACHE_TIMEOUT)
 def update_graph_p1_casos_acumulados_comuna(regions, comunas):
-    return plotting.make_fig_p1_casos_acumulados_comuna(
-        DFS, FIGS, date_day, date_month, regions=regions, comunas=comunas)
+    return fig_cache.get_fig('p1_casos_acumulados_comuna', date_day=date_day, date_month=date_month, regions=regions, comunas=comunas)
 
 
 @dash_app.callback(
     Output('graph_fallecidos_cumulativo_t', 'figure'),
     [Input('graph_fallecidos_cumulativo_t-value-type', 'value')])
 def update_graph_fallecidos_cumulativo_t(value_type):
-    return plotting.make_fig_fallecidos_cumulativo_t(
-        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type)
+    return fig_cache.get_fig('fallecidos_cumulativo_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
@@ -544,36 +469,28 @@ def update_graph_fallecidos_cumulativo_t(value_type):
     [Input('graph_casos_totales_cumulativo_t-yaxis-type', 'value'),
      Input('graph_casos_totales_cumulativo_t-value-type', 'value')])
 def update_graph_casos_totales_cumulativo_t(yaxis_type, value_type):
-    return plotting.make_fig_casos_totales_cumulativo_t(
-        DFS, FIGS, date_day, date_month, yaxis_type=yaxis_type, value_type=value_type
-    )
+    return fig_cache.get_fig('casos_totales_cumulativo_t', date_day=date_day, date_month=date_month, yaxis_type=yaxis_type, value_type=value_type)
 
 
 @dash_app.callback(
     Output('graph_casos_nuevos_cumulativo_t', 'figure'),
     [Input('graph_casos_nuevos_cumulativo_t-value-type', 'value')])
 def update_graph_casos_nuevos_cumulativo_t(value_type):
-    return plotting.make_fig_casos_nuevos_cumulativo_t(
-        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type
-    )
+    return fig_cache.get_fig('casos_nuevos_cumulativo_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
     Output('graph_pcr_t', 'figure'),
     [Input('graph_pcr_t-value-type', 'value')])
 def update_graph_pcr_t(value_type):
-    return plotting.make_fig_pcr_t(
-        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type
-    )
+    return fig_cache.get_fig('pcr_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
     Output('graph_uci_t', 'figure'),
     [Input('graph_uci_t-value-type', 'value')])
 def update_graph_uci_t(value_type):
-    return plotting.make_fig_uci_t(
-        DFS, FIGS, date_day, date_month, yaxis_type='Lineal', value_type=value_type
-    )
+    return fig_cache.get_fig('uci_t', date_day=date_day, date_month=date_month, yaxis_type='Lineal', value_type=value_type)
 
 
 if __name__ == '__main__':
