@@ -2,10 +2,7 @@
 import datetime as dt
 import logging
 from typing import Dict, List, Tuple
-from typing_extensions import Literal
 
-from flask_caching import Cache
-import pandas as pd
 import plotly.graph_objects as go
 
 from constants import MARKER_SYMBOLS, COMUNA_TO_REGION, REGION_TO_COMUNAS, REGIONS_SORTED
@@ -29,12 +26,12 @@ class FigCache():
         dataset_name = key[0]
 
         if fig is None or self.df_cache.will_download(dataset_name):
-            logging.warn(f'Cache miss for figure: {key}')
+            logging.warning(f'Cache miss for figure: {key}')
             fig = self._make_fig(key)
             self.cache[key] = fig
 
         return self.cache[key]
-    
+
     def __getitem__(self, key: Tuple[str, tuple, tuple]) -> go.Figure:
         return self.get(key)
 
@@ -58,8 +55,8 @@ class FigCache():
         return func(dfs=self.df_cache, **kwargs)  # type: ignore
 
 
-def make_fig_p1_casos_acumulados_comuna(dfs: DataCache, *,
-    date_day: int, date_month: str, regions: List[str], comunas: List[str]):
+def make_fig_p1_casos_acumulados_comuna(
+        dfs: DataCache, *, regions: List[str], comunas: List[str], **kwargs):
     data = dfs['p1_casos_acumulados_comuna']
 
     yaxis_title = 'Casos acumulados'
@@ -71,20 +68,25 @@ def make_fig_p1_casos_acumulados_comuna(dfs: DataCache, *,
             for comuna in REGION_TO_COMUNAS[region]:
                 casos = data[comuna][-1]
                 if casos >= 10:
-                    scatter = go.Scatter(x=data.index, y=data[comuna], mode='lines+markers',
-                                    name=f'{comuna} ({REGIONS_TO_ABBR[region]})', marker_symbol=MARKER_SYMBOLS[region], marker_size=8,
-                                    showlegend=True)
+                    scatter = go.Scatter(
+                        x=data.index, y=data[comuna], mode='lines+markers',
+                        name=f'{comuna} ({REGIONS_TO_ABBR[region]})',
+                        marker_symbol=MARKER_SYMBOLS[region], marker_size=8,
+                        showlegend=True
+                    )
                     fig.add_trace(scatter)
         else:
             for comuna in comunas:
                 if region == COMUNA_TO_REGION[comuna] and data[comuna][-1] >= 10:
-                    scatter = go.Scatter(x=data.index, y=data[comuna], mode='lines+markers',
-                                    name=f'{comuna} ({REGIONS_TO_ABBR[region]})', marker_symbol=MARKER_SYMBOLS[region], marker_size=8,
-                                    showlegend=True)
+                    scatter = go.Scatter(
+                        x=data.index, y=data[comuna], mode='lines+markers',
+                        name=f'{comuna} ({REGIONS_TO_ABBR[region]})', marker_symbol=MARKER_SYMBOLS[region], marker_size=8,
+                        showlegend=True
+                    )
                     fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Casos acumulados por comuna',
+        'title': 'Casos acumulados por comuna',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -96,8 +98,8 @@ def make_fig_p1_casos_acumulados_comuna(dfs: DataCache, *,
     return fig
 
 
-def make_fig_fallecidos_cumulativo_t(dfs: DataCache, *,
-    date_day: int, date_month: str, yaxis_type: str, value_type: str):
+def make_fig_fallecidos_cumulativo_t(
+        dfs: DataCache, *, yaxis_type: str, value_type: str):
     data = dfs['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['fallecidos_cumulativo_t']
 
     lo_yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -105,15 +107,17 @@ def make_fig_fallecidos_cumulativo_t(dfs: DataCache, *,
 
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
 
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Muertes acumulados por región',
+        'title': 'Muertes acumulados por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': lo_yaxis_title,
@@ -125,15 +129,15 @@ def make_fig_fallecidos_cumulativo_t(dfs: DataCache, *,
     return fig
 
 
-def make_fig_fallecidos_etario_t(dfs: DataCache, *, date_day: int, date_month: str):
+def make_fig_fallecidos_etario_t(dfs: DataCache, **kwargs):
     data = dfs['fallecidos_etario_t']
 
     fig = go.Figure()
-    bar = go.Bar(x=data.columns.values, y=data.iloc[-1, :].values, name='Muertes totales')
-    fig.add_trace(bar)
+    bar_trace = go.Bar(x=data.columns.values, y=data.iloc[-1, :].values, name='Muertes totales')
+    fig.add_trace(bar_trace)
 
     fig.layout = {
-        'title': f'Muertes totales por rango etario',
+        'title': 'Muertes totales por rango etario',
         'xaxis': {'title': 'Rango etario'},
         'yaxis': {
             'title': 'Muertes confirmadas',
@@ -145,8 +149,8 @@ def make_fig_fallecidos_etario_t(dfs: DataCache, *, date_day: int, date_month: s
     return fig
 
 
-def make_fig_casos_totales_cumulativo_t(dfs: DataCache, *,
-    date_day: int, date_month: str, yaxis_type: str, value_type: str):
+def make_fig_casos_totales_cumulativo_t(
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
     data = dfs['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['casos_totales_cumulativo_t']
 
     yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -154,15 +158,17 @@ def make_fig_casos_totales_cumulativo_t(dfs: DataCache, *,
 
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
 
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Casos confirmados acumulados por región',
+        'title': 'Casos confirmados acumulados por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -174,19 +180,21 @@ def make_fig_casos_totales_cumulativo_t(dfs: DataCache, *,
     return fig
 
 
-def make_fig_casos_totales_evolucion(dfs: DataCache, *, date_day: int, date_month: str):
+def make_fig_casos_totales_evolucion(dfs: DataCache, **kwargs):
     data = dfs['casos_totales_evolucion']
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
 
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Evolución de casos confirmados por región',
+        'title': 'Evolución de casos confirmados por región',
         'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
         'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
         'height': 520
@@ -195,8 +203,8 @@ def make_fig_casos_totales_evolucion(dfs: DataCache, *, date_day: int, date_mont
     return fig
 
 
-def make_fig_casos_nuevos_cumulativo_t(dfs: DataCache, *,
-    date_day: int, date_month: str, yaxis_type: str, value_type: str):
+def make_fig_casos_nuevos_cumulativo_t(
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
     data = dfs['casos_nuevos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['casos_nuevos_cumulativo_t']
 
     yaxis_title = 'Casos confirmados nuevos' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -208,15 +216,17 @@ def make_fig_casos_nuevos_cumulativo_t(dfs: DataCache, *,
 
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
 
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Casos nuevos confirmados por región',
+        'title': 'Casos nuevos confirmados por región',
         'xaxis': {
             'title': 'Fecha',
             'range': (start_date, end_date),
@@ -231,8 +241,8 @@ def make_fig_casos_nuevos_cumulativo_t(dfs: DataCache, *,
     return fig
 
 
-def make_fig_uci_t(dfs: DataCache, *,
-    date_day: int, date_month: str, yaxis_type: str, value_type: str):
+def make_fig_uci_t(
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
     data = dfs['uci_t_per_k'] if value_type == POR_MIL_HAB else dfs['uci_t']
 
     yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -240,15 +250,17 @@ def make_fig_uci_t(dfs: DataCache, *,
 
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
 
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Pacientes en UCI por región',
+        'title': 'Pacientes en UCI por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -260,8 +272,8 @@ def make_fig_uci_t(dfs: DataCache, *,
     return fig
 
 
-def make_fig_pcr_t(dfs: DataCache, *,
-    date_day: int, date_month: str, yaxis_type: str, value_type: str):
+def make_fig_pcr_t(
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
     data = dfs['pcr_t_per_k'] if value_type == POR_MIL_HAB else dfs['pcr_t']
 
     yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -269,15 +281,17 @@ def make_fig_pcr_t(dfs: DataCache, *,
 
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10)
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
 
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Tests PCR aplicados por región',
+        'title': 'Tests PCR aplicados por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -289,14 +303,18 @@ def make_fig_pcr_t(dfs: DataCache, *,
     return fig
 
 
-def make_fig_numero_ventiladores_t(dfs: DataCache, *, date_day: int, date_month: str):
+def make_fig_numero_ventiladores_t(dfs: DataCache, **kwargs):
     data = dfs['numero_ventiladores_t']
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=data.index, y=data['ocupados'], mode='lines+markers', name='Ocupados', fill='tozeroy'))
+    fig.add_trace(
+        go.Scatter(
+            x=data.index, y=data['ocupados'], mode='lines+markers', name='Ocupados', fill='tozeroy'
+        )
+    )
     fig.add_trace(go.Scatter(x=data.index, y=data['total'], mode='lines+markers', name='Total'))
     fig.layout = {
-        'title': f'Uso de ventiladores',
+        'title': 'Uso de ventiladores',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': 'Número de ventiladores',
@@ -308,8 +326,7 @@ def make_fig_numero_ventiladores_t(dfs: DataCache, *, date_day: int, date_month:
     return fig
 
 
-def make_fig_casos_nuevos_per_test(dfs: DataCache, *,
-    date_day: int, date_month: str, yaxis_type: str):
+def make_fig_casos_nuevos_per_test(dfs: DataCache, *, yaxis_type: str, **kwargs):
     data = dfs['casos_nuevos_per_test']
 
     yaxis_title = 'Tasa de tests positivos [%]'
@@ -317,8 +334,10 @@ def make_fig_casos_nuevos_per_test(dfs: DataCache, *,
 
     fig = go.Figure()
     for col in data.columns:
-        scatter = go.Scatter(x=data.index, y=data[col], mode='lines+markers', name=col,
-                                marker_symbol=MARKER_SYMBOLS[col], marker_size=10, visible='legendonly')
+        scatter = go.Scatter(
+            x=data.index, y=data[col], mode='lines+markers', name=col,
+            marker_symbol=MARKER_SYMBOLS[col], marker_size=10, visible='legendonly'
+        )
         if col == 'Total':
             scatter.marker.color = 'black'
             scatter.visible = True
@@ -326,7 +345,7 @@ def make_fig_casos_nuevos_per_test(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Tasa de tests positivos',
+        'title': 'Tasa de tests positivos',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
