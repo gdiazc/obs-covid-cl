@@ -84,7 +84,7 @@ def make_fig_p1_casos_acumulados_comuna(dfs: DataCache, *,
                     fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Casos acumulados por comuna ({date_day} {date_month})',
+        'title': f'Casos acumulados por comuna',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -113,7 +113,7 @@ def make_fig_fallecidos_cumulativo_t(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Muertes acumulados por región ({date_day} {date_month})',
+        'title': f'Muertes acumulados por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': lo_yaxis_title,
@@ -133,7 +133,7 @@ def make_fig_fallecidos_etario_t(dfs: DataCache, *, date_day: int, date_month: s
     fig.add_trace(bar)
 
     fig.layout = {
-        'title': f'Muertes totales por rango etario (hasta {date_day} {date_month})',
+        'title': f'Muertes totales por rango etario',
         'xaxis': {'title': 'Rango etario'},
         'yaxis': {
             'title': 'Muertes confirmadas',
@@ -162,7 +162,7 @@ def make_fig_casos_totales_cumulativo_t(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Casos confirmados acumulados por región ({date_day} {date_month})',
+        'title': f'Casos confirmados acumulados por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -186,7 +186,7 @@ def make_fig_casos_totales_evolucion(dfs: DataCache, *, date_day: int, date_mont
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Evolución de casos confirmados por región ({date_day} {date_month})',
+        'title': f'Evolución de casos confirmados por región',
         'xaxis': {'title': 'Días desde el décimo caso confirmado en la región'},
         'yaxis': {'title': 'Número de casos confirmados', 'type': 'log'},
         'height': 520
@@ -216,7 +216,7 @@ def make_fig_casos_nuevos_cumulativo_t(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Casos nuevos confirmados por región ({date_day} {date_month})',
+        'title': f'Casos nuevos confirmados por región',
         'xaxis': {
             'title': 'Fecha',
             'range': (start_date, end_date),
@@ -248,7 +248,7 @@ def make_fig_uci_t(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Pacientes en UCI por región ({date_day} {date_month})',
+        'title': f'Pacientes en UCI por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -277,7 +277,7 @@ def make_fig_pcr_t(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Tests PCR aplicados por región ({date_day} {date_month})',
+        'title': f'Tests PCR aplicados por región',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
@@ -326,7 +326,7 @@ def make_fig_casos_nuevos_per_test(dfs: DataCache, *,
         fig.add_trace(scatter)
 
     fig.layout = {
-        'title': f'Tasa de tests positivos ({date_day} {date_month})',
+        'title': f'Tasa de tests positivos',
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': yaxis_title,
