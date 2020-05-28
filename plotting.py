@@ -99,7 +99,7 @@ def make_fig_p1_casos_acumulados_comuna(
 
 
 def make_fig_fallecidos_cumulativo_t(
-        dfs: DataCache, *, yaxis_type: str, value_type: str):
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
     data = dfs['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['fallecidos_cumulativo_t']
 
     lo_yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
