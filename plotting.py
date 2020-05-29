@@ -105,6 +105,10 @@ def make_fig_fallecidos_cumulativo_t(
     lo_yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     lo_yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
+    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    start_date = last_date - dt.timedelta(days=60)
+    end_date = last_date + dt.timedelta(days=2)
+
     fig = go.Figure()
     for col in data.columns:
         scatter = go.Scatter(
@@ -118,7 +122,10 @@ def make_fig_fallecidos_cumulativo_t(
 
     fig.layout = {
         'title': 'Muertes acumulados por región',
-        'xaxis': {'title': 'Fecha'},
+        'xaxis': {
+            'title': 'Fecha',
+            'range': (start_date, end_date),
+        },
         'yaxis': {
             'title': lo_yaxis_title,
             'type': lo_yaxis_type
