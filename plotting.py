@@ -174,6 +174,10 @@ def make_fig_casos_totales_cumulativo_t(
     yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
+    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    start_date = last_date - dt.timedelta(days=60)
+    end_date = last_date + dt.timedelta(days=2)
+
     fig = go.Figure()
     for col in data.columns:
         scatter = go.Scatter(
@@ -187,7 +191,10 @@ def make_fig_casos_totales_cumulativo_t(
 
     fig.layout = {
         'title': 'Casos confirmados acumulados por región',
-        'xaxis': {'title': 'Fecha'},
+        'xaxis': {
+            'title': 'Fecha',
+            'range': (start_date, end_date),
+        },
         'yaxis': {
             'title': yaxis_title,
             'type': yaxis_type
@@ -272,6 +279,10 @@ def make_fig_uci_t(
     yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
+    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    start_date = last_date - dt.timedelta(days=60)
+    end_date = last_date + dt.timedelta(days=2)
+
     fig = go.Figure()
     for col in data.columns:
         scatter = go.Scatter(
@@ -285,7 +296,10 @@ def make_fig_uci_t(
 
     fig.layout = {
         'title': 'Pacientes en UCI por región',
-        'xaxis': {'title': 'Fecha'},
+        'xaxis': {
+            'title': 'Fecha',
+            'range': (start_date, end_date),
+        },
         'yaxis': {
             'title': yaxis_title,
             'type': yaxis_type
@@ -304,6 +318,13 @@ def make_fig_pcr_t(
     yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
+    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    start_date = max(
+        dt.datetime.strptime(data.index[0], '%Y-%m-%d') - dt.timedelta(days=2),
+        last_date - dt.timedelta(days=60)
+    )
+    end_date = last_date + dt.timedelta(days=2)
+
     fig = go.Figure()
     for col in data.columns:
         scatter = go.Scatter(
@@ -317,7 +338,10 @@ def make_fig_pcr_t(
 
     fig.layout = {
         'title': 'Tests PCR aplicados por región',
-        'xaxis': {'title': 'Fecha'},
+        'xaxis': {
+            'title': 'Fecha',
+            'range': (start_date, end_date),
+        },
         'yaxis': {
             'title': yaxis_title,
             'type': yaxis_type
@@ -333,6 +357,13 @@ def make_fig_numero_ventiladores_t(
         ):  # pylint: disable=unused-argument
     data = dfs['numero_ventiladores_t']
 
+    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    start_date = max(
+        dt.datetime.strptime(data.index[0], '%Y-%m-%d') - dt.timedelta(days=2),
+        last_date - dt.timedelta(days=60)
+    )
+    end_date = last_date + dt.timedelta(days=2)
+
     fig = go.Figure()
     fig.add_trace(
         go.Scatter(
@@ -342,7 +373,10 @@ def make_fig_numero_ventiladores_t(
     fig.add_trace(go.Scatter(x=data.index, y=data['total'], mode='lines+markers', name='Total'))
     fig.layout = {
         'title': 'Uso de ventiladores',
-        'xaxis': {'title': 'Fecha'},
+        'xaxis': {
+            'title': 'Fecha',
+            'range': (start_date, end_date),
+        },
         'yaxis': {
             'title': 'Número de ventiladores',
         },
@@ -360,6 +394,13 @@ def make_fig_casos_nuevos_per_test(
     yaxis_title = 'Tasa de tests positivos [%]'
     yaxis_type = 'linear'
 
+    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    start_date = max(
+        dt.datetime.strptime(data.index[0], '%Y-%m-%d') - dt.timedelta(days=2),
+        last_date - dt.timedelta(days=60)
+    )
+    end_date = last_date + dt.timedelta(days=2)
+
     fig = go.Figure()
     for col in data.columns:
         scatter = go.Scatter(
@@ -374,7 +415,10 @@ def make_fig_casos_nuevos_per_test(
 
     fig.layout = {
         'title': 'Tasa de tests positivos',
-        'xaxis': {'title': 'Fecha'},
+        'xaxis': {
+            'title': 'Fecha',
+            'range': (start_date, end_date),
+        },
         'yaxis': {
             'title': yaxis_title,
             'type': yaxis_type,
