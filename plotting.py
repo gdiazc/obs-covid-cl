@@ -56,7 +56,8 @@ class FigCache():
 
 
 def make_fig_p1_casos_acumulados_comuna(
-        dfs: DataCache, *, regions: List[str], comunas: List[str], **kwargs):
+        dfs: DataCache, *, regions: List[str], comunas: List[str], **kwargs
+        ):  # pylint: disable=unused-argument
     data = dfs['p1_casos_acumulados_comuna']
 
     yaxis_title = 'Casos acumulados'
@@ -79,8 +80,11 @@ def make_fig_p1_casos_acumulados_comuna(
             for comuna in comunas:
                 if region == COMUNA_TO_REGION[comuna] and data[comuna][-1] >= 10:
                     scatter = go.Scatter(
-                        x=data.index, y=data[comuna], mode='lines+markers',
-                        name=f'{comuna} ({REGIONS_TO_ABBR[region]})', marker_symbol=MARKER_SYMBOLS[region], marker_size=8,
+                        x=data.index, y=data[comuna],
+                        mode='lines+markers',
+                        name=f'{comuna} ({REGIONS_TO_ABBR[region]})',
+                        marker_symbol=MARKER_SYMBOLS[region],
+                        marker_size=8,
                         showlegend=True
                     )
                     fig.add_trace(scatter)
@@ -99,10 +103,13 @@ def make_fig_p1_casos_acumulados_comuna(
 
 
 def make_fig_fallecidos_cumulativo_t(
-        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
-    data = dfs['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['fallecidos_cumulativo_t']
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs
+        ):  # pylint: disable=unused-argument
+    data = dfs['fallecidos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB\
+        else dfs['fallecidos_cumulativo_t']
 
-    lo_yaxis_title = 'Muertes acumuladas' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+    lo_yaxis_title = 'Muertes acumuladas' +\
+        (' por mil hab.' if value_type == POR_MIL_HAB else '')
     lo_yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
     last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
@@ -136,11 +143,13 @@ def make_fig_fallecidos_cumulativo_t(
     return fig
 
 
-def make_fig_fallecidos_etario_t(dfs: DataCache, **kwargs):
+def make_fig_fallecidos_etario_t(dfs: DataCache, **kwargs):  # pylint: disable=unused-argument
     data = dfs['fallecidos_etario_t']
 
     fig = go.Figure()
-    bar_trace = go.Bar(x=data.columns.values, y=data.iloc[-1, :].values, name='Muertes totales')
+    bar_trace = go.Bar(
+        x=data.columns.values, y=data.iloc[-1, :].values, name='Muertes totales'
+    )
     fig.add_trace(bar_trace)
 
     fig.layout = {
@@ -157,8 +166,10 @@ def make_fig_fallecidos_etario_t(dfs: DataCache, **kwargs):
 
 
 def make_fig_casos_totales_cumulativo_t(
-        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
-    data = dfs['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['casos_totales_cumulativo_t']
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs
+        ):  # pylint: disable=unused-argument
+    data = dfs['casos_totales_cumulativo_t_per_k'] if value_type == POR_MIL_HAB\
+        else dfs['casos_totales_cumulativo_t']
 
     yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
@@ -187,7 +198,9 @@ def make_fig_casos_totales_cumulativo_t(
     return fig
 
 
-def make_fig_casos_totales_evolucion(dfs: DataCache, **kwargs):
+def make_fig_casos_totales_evolucion(
+        dfs: DataCache, **kwargs
+        ):  # pylint: disable=unused-argument
     data = dfs['casos_totales_evolucion']
     fig = go.Figure()
     for col in data.columns:
@@ -211,10 +224,13 @@ def make_fig_casos_totales_evolucion(dfs: DataCache, **kwargs):
 
 
 def make_fig_casos_nuevos_cumulativo_t(
-        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
-    data = dfs['casos_nuevos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB else dfs['casos_nuevos_cumulativo_t']
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs
+        ):  # pylint: disable=unused-argument
+    data = dfs['casos_nuevos_cumulativo_t_per_k'] if value_type == POR_MIL_HAB\
+        else dfs['casos_nuevos_cumulativo_t']
 
-    yaxis_title = 'Casos confirmados nuevos' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
+    yaxis_title = 'Casos confirmados nuevos' +\
+        (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
     last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
@@ -249,7 +265,8 @@ def make_fig_casos_nuevos_cumulativo_t(
 
 
 def make_fig_uci_t(
-        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs
+        ):  # pylint: disable=unused-argument
     data = dfs['uci_t_per_k'] if value_type == POR_MIL_HAB else dfs['uci_t']
 
     yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -280,7 +297,8 @@ def make_fig_uci_t(
 
 
 def make_fig_pcr_t(
-        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs):
+        dfs: DataCache, *, yaxis_type: str, value_type: str, **kwargs
+        ):  # pylint: disable=unused-argument
     data = dfs['pcr_t_per_k'] if value_type == POR_MIL_HAB else dfs['pcr_t']
 
     yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
@@ -310,7 +328,9 @@ def make_fig_pcr_t(
     return fig
 
 
-def make_fig_numero_ventiladores_t(dfs: DataCache, **kwargs):
+def make_fig_numero_ventiladores_t(
+        dfs: DataCache, **kwargs
+        ):  # pylint: disable=unused-argument
     data = dfs['numero_ventiladores_t']
 
     fig = go.Figure()
@@ -332,7 +352,9 @@ def make_fig_numero_ventiladores_t(dfs: DataCache, **kwargs):
     return fig
 
 
-def make_fig_casos_nuevos_per_test(dfs: DataCache, *, yaxis_type: str, **kwargs):
+def make_fig_casos_nuevos_per_test(
+        dfs: DataCache, *, yaxis_type: str, **kwargs
+        ):  # pylint: disable=unused-argument
     data = dfs['casos_nuevos_per_test']
 
     yaxis_title = 'Tasa de tests positivos [%]'
