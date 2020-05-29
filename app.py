@@ -352,7 +352,8 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                 html.H2(id='testeo', className='mt-4', children='Gráfico 4. Tests PCR aplicados'),
 
                 dcc.Markdown('''
-                    Los datos sobre tests PCR aplicados tienen muchos vacíos, lo que se traduce en líneas disconexas en el gráfico.
+                    Los datos sobre tests PCR aplicados tienen muchos vacíos, lo que se traduce
+                    en líneas disconexas en el gráfico.
 
                     Opciones:
                 '''),
@@ -363,7 +364,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
                             id='graph_pcr_t-value-type',
                             className='form-check form-check-inline',
                             options=[{'label': i, 'value': i} for i in ['Total', POR_MIL_HAB]],
-                            value=POR_MIL_HAB,
+                            value='Total',
                             labelStyle={'display': 'inline-block'},
                             labelClassName='form-check-label mr-2'
                         )
