@@ -318,7 +318,6 @@ def make_fig_numero_ventiladores_t(dfs: DataCache, **kwargs):
         'xaxis': {'title': 'Fecha'},
         'yaxis': {
             'title': 'Número de ventiladores',
-            'range': [0, 2500]
         },
         'height': 520
     }
