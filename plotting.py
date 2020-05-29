@@ -5,8 +5,8 @@ from typing import Dict, List, Tuple
 
 import plotly.graph_objects as go
 
-from constants import MARKER_SYMBOLS, COMUNA_TO_REGION, REGION_TO_COMUNAS, REGIONS_SORTED
-from constants import REGIONS_TO_ABBR, POR_MIL_HAB
+from constants import COMUNA_TO_REGION, MARKER_SYMBOLS, POR_MIL_HAB
+from constants import REGIONS_SORTED, REGIONS_TO_ABBR, REGION_TO_COMUNAS
 from data_client import DataCache
 
 
