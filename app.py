@@ -47,8 +47,8 @@ def prepare_report(dfs):
 
 
 REPORT = prepare_report(df_cache)
-DATE_DAY = 29
-DATE_MONTH = 'mayo'
+DATE_DAY = 1
+DATE_MONTH = 'junio'
 
 dash_app.layout = html.Div(className='container-fluid', children=[
     dbc.Row(
