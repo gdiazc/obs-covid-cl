@@ -112,7 +112,7 @@ def make_fig_fallecidos_cumulativo_t(
         (' por mil hab.' if value_type == POR_MIL_HAB else '')
     lo_yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = last_date - dt.timedelta(days=60)
     end_date = last_date + dt.timedelta(days=2)
 
@@ -174,7 +174,7 @@ def make_fig_casos_totales_cumulativo_t(
     yaxis_title = 'Casos confirmados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = last_date - dt.timedelta(days=60)
     end_date = last_date + dt.timedelta(days=2)
 
@@ -240,7 +240,7 @@ def make_fig_casos_nuevos_cumulativo_t(
         (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = last_date - dt.timedelta(days=60)
     end_date = last_date + dt.timedelta(days=2)
 
@@ -279,7 +279,7 @@ def make_fig_uci_t(
     yaxis_title = 'Pacientes en UCI' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = last_date - dt.timedelta(days=60)
     end_date = last_date + dt.timedelta(days=2)
 
@@ -318,9 +318,9 @@ def make_fig_pcr_t(
     yaxis_title = 'Tests PCR aplicados' + (' por mil hab.' if value_type == POR_MIL_HAB else '')
     yaxis_type = 'linear' if yaxis_type == 'Lineal' else 'log'
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = max(
-        dt.datetime.strptime(data.index[0], '%Y-%m-%d') - dt.timedelta(days=2),
+        data.index[0] - dt.timedelta(days=2),
         last_date - dt.timedelta(days=60)
     )
     end_date = last_date + dt.timedelta(days=2)
@@ -357,9 +357,9 @@ def make_fig_numero_ventiladores_t(
         ):  # pylint: disable=unused-argument
     data = dfs['numero_ventiladores_t']
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = max(
-        dt.datetime.strptime(data.index[0], '%Y-%m-%d') - dt.timedelta(days=2),
+        data.index[0] - dt.timedelta(days=2),
         last_date - dt.timedelta(days=60)
     )
     end_date = last_date + dt.timedelta(days=2)
@@ -394,9 +394,9 @@ def make_fig_casos_nuevos_per_test(
     yaxis_title = 'Tasa de tests positivos [%]'
     yaxis_type = 'linear'
 
-    last_date = dt.datetime.strptime(data.index[-1], '%Y-%m-%d')
+    last_date = data.index[-1]
     start_date = max(
-        dt.datetime.strptime(data.index[0], '%Y-%m-%d') - dt.timedelta(days=2),
+        data.index[0] - dt.timedelta(days=2),
         last_date - dt.timedelta(days=60)
     )
     end_date = last_date + dt.timedelta(days=2)

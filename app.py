@@ -9,6 +9,7 @@ from constants import REGIONS_SORTED, COMUNA_TO_REGION
 from constants import POR_MIL_HAB
 from plotting import FigCache
 import data_client
+import utils
 
 
 metas = [
@@ -28,25 +29,7 @@ app = dash_app.server
 df_cache = data_client.DataCache()
 fig_cache = FigCache(df_cache)
 
-
-def prepare_report(dfs):
-    report = {}
-    report['total_deaths'] = dfs['fallecidos_cumulativo_t']['Total'][-1]
-    report['deaths_today'] = dfs['fallecidos_cumulativo_t']['Total'][-1] - dfs['fallecidos_cumulativo_t']['Total'][-2]
-    report['top_3_deaths'] = sorted(dfs['fallecidos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_deaths_last_day'] = sorted(dfs['fallecidos_cumulativo_t'].diff().iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_uci'] = sorted(dfs['uci_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_new_cases'] = sorted(dfs['casos_nuevos_cumulativo_t'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['top_3_new_cases_per_k'] = sorted(dfs['casos_nuevos_cumulativo_t_per_k'].iloc[-1].to_dict().items(), key=lambda item: item[1], reverse=True)[1:4]
-    report['tests_today'] = dfs['pcr_t'].iloc[-1]['Total']
-    report['tests_yesterday'] = dfs['pcr_t'].iloc[-2]['Total']
-    report['tests_diff'] = report['tests_today'] - report['tests_yesterday']
-    report['top_10_comunas_total'] = [comuna for comuna, cases in sorted(dfs['p1_casos_acumulados_comuna'].iloc[-1, :].to_dict().items(), key=lambda item: -item[1])[:10]]
-
-    return report
-
-
-REPORT = prepare_report(df_cache)
+REPORT = utils.prepare_report(df_cache)
 DATE_DAY = 1
 DATE_MONTH = 'junio'
 

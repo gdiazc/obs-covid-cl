@@ -76,12 +76,12 @@ def download_p1_casos_acumulados_comuna():
 
 
 def download_casos_totales_cumulativo_t():
-    ans = pd.read_csv(URLS['casos_totales_cumulativo_t'], index_col='Region')
+    ans = pd.read_csv(URLS['casos_totales_cumulativo_t'], index_col='Region', parse_dates=True)
     return ans
 
 
 def download_fallecidos_cumulativo_t():
-    ans = pd.read_csv(URLS['fallecidos_cumulativo_t'], index_col='Region')
+    ans = pd.read_csv(URLS['fallecidos_cumulativo_t'], index_col='Region', parse_dates=True)
     return ans
 
 
@@ -93,17 +93,18 @@ def download_fallecidos_etario_t():
 def download_uci_t():
     ans = pd.read_csv(URLS['uci_t'], index_col='Region')
     ans = ans.loc['2020-04-01':, :]  # type: ignore
+    ans.index = pd.to_datetime(ans.index)
     ans['Total'] = ans.sum(axis=1)
     return ans
 
 
 def download_casos_nuevos_cumulativo_t():
-    ans = pd.read_csv(URLS['casos_nuevos_cumulativo_t'], index_col='Region')
+    ans = pd.read_csv(URLS['casos_nuevos_cumulativo_t'], index_col='Region', parse_dates=True)
     return ans
 
 
 def download_numero_ventiladores_t():
-    ans = pd.read_csv(URLS['numero_ventiladores_t'], index_col='Ventiladores')
+    ans = pd.read_csv(URLS['numero_ventiladores_t'], index_col='Ventiladores', parse_dates=True)
     ans = ans.drop(columns=['disponibles'])
     return ans
 
@@ -111,6 +112,7 @@ def download_numero_ventiladores_t():
 def download_pcr_t():
     ans = pd.read_csv(URLS['pcr_t'], index_col='Region', na_values='-')
     ans = ans.loc['2020-04-09':, :]  # type: ignore
+    ans.index = pd.to_datetime(ans.index)
     ans['Total'] = ans.sum(axis=1)
     return ans
 
