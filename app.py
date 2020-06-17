@@ -30,8 +30,6 @@ df_cache = data_client.DataCache()
 fig_cache = FigCache(df_cache)
 
 REPORT = utils.prepare_report(df_cache)
-DATE_DAY = 1
-DATE_MONTH = 'junio'
 
 dash_app.layout = html.Div(className='container-fluid', children=[
     dbc.Row(
@@ -87,7 +85,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_casos_nuevos_cumulativo_t',
-                    figure=fig_cache.get_fig('casos_nuevos_cumulativo_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type='Total')
+                    figure=fig_cache.get_fig('casos_nuevos_cumulativo_t', yaxis_type='Lineal', value_type='Total')
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -99,47 +97,47 @@ dash_app.layout = html.Div(className='container-fluid', children=[
     # Reporte ejecutivo
     # ===========
 
-    dbc.Row(
-        dbc.Col(
-            [
-                html.H2(id='reporte', className='mt-4', children=f'Reporte ejecutivo {DATE_DAY} {DATE_MONTH}'),
+    # dbc.Row(
+    #     dbc.Col(
+    #         [
+    #             html.H2(id='reporte', className='mt-4', children=f'Reporte ejecutivo {DATE_DAY} {DATE_MONTH}'),
 
-                dcc.Markdown('''
-                Cifras importantes del día, actualizadas **automáticamente** (nota: las cifras se actualizan
-                usualmente a medio día).
+    #             dcc.Markdown('''
+    #             Cifras importantes del día, actualizadas **automáticamente** (nota: las cifras se actualizan
+    #             usualmente a medio día).
 
-                1. Muertes ([ir al gráfico](#muertes))
-                    - **Muertes nacionales:**
-                        - `{deaths_today}` muertes en Chile hoy
-                        - `{total_deaths}` muertes en Chile hasta la fecha
-                    - **Regiones con más muertes hoy:**
-                        - {top_3_deaths_last_day_string}
-                    - **Regiones con más muertes hasta la fecha:**
-                        - {top_3_deaths_string}
-                1. Casos críticos ([ir al gráfico](#pacientes-en-uci))
-                    - **Regiones con más pacientes UCI hoy:**
-                        - {top_3_uci_string}
-                1. Casos confirmados ([ir al gráfico](#casos-acumulados))
-                    - **Regiones con más casos nuevos hoy:**
-                        - {top_3_new_cases_string}
-                1. Testeo ([ir al gráfico](#testeo))
-                    - **Tests PCR realizados hoy:**
-                        - {tests_today_string} tests ({tests_diff_string})
-                '''.format(
-                    deaths_today=REPORT['deaths_today'],
-                    total_deaths=REPORT['total_deaths'],
-                    top_3_deaths_last_day_string=', '.join([f'{reg} (`{int(n)}` muertes hoy)' for reg, n in REPORT['top_3_deaths_last_day']]),
-                    top_3_deaths_string=', '.join([f'{reg} (`{int(n)}` muertes)' for reg, n in REPORT['top_3_deaths']]),
-                    top_3_uci_string=', '.join([f'{reg} (`{n}` pacientes UCI)' for reg, n in REPORT['top_3_uci']]),
-                    top_3_new_cases_string=', '.join([f'{reg} (`{n}` casos)' for reg, n in REPORT['top_3_new_cases']]),
-                    tests_today_string=f'`{int(REPORT["tests_today"])}`',
-                    tests_diff_string='`' + str(abs(int(REPORT['tests_diff']))) + ('` más' if REPORT['tests_diff'] > 0 else '` menos') + ' que ayer',
-                )),
-            ],
-            lg={'size': 10, 'offset': 1},
-            sm={'size': 12, 'offset': 0},
-        ),
-    ),
+    #             1. Muertes ([ir al gráfico](#muertes))
+    #                 - **Muertes nacionales:**
+    #                     - `{deaths_today}` muertes en Chile hoy
+    #                     - `{total_deaths}` muertes en Chile hasta la fecha
+    #                 - **Regiones con más muertes hoy:**
+    #                     - {top_3_deaths_last_day_string}
+    #                 - **Regiones con más muertes hasta la fecha:**
+    #                     - {top_3_deaths_string}
+    #             1. Casos críticos ([ir al gráfico](#pacientes-en-uci))
+    #                 - **Regiones con más pacientes UCI hoy:**
+    #                     - {top_3_uci_string}
+    #             1. Casos confirmados ([ir al gráfico](#casos-acumulados))
+    #                 - **Regiones con más casos nuevos hoy:**
+    #                     - {top_3_new_cases_string}
+    #             1. Testeo ([ir al gráfico](#testeo))
+    #                 - **Tests PCR realizados hoy:**
+    #                     - {tests_today_string} tests ({tests_diff_string})
+    #             '''.format(
+    #                 deaths_today=REPORT['deaths_today'],
+    #                 total_deaths=REPORT['total_deaths'],
+    #                 top_3_deaths_last_day_string=', '.join([f'{reg} (`{int(n)}` muertes hoy)' for reg, n in REPORT['top_3_deaths_last_day']]),
+    #                 top_3_deaths_string=', '.join([f'{reg} (`{int(n)}` muertes)' for reg, n in REPORT['top_3_deaths']]),
+    #                 top_3_uci_string=', '.join([f'{reg} (`{n}` pacientes UCI)' for reg, n in REPORT['top_3_uci']]),
+    #                 top_3_new_cases_string=', '.join([f'{reg} (`{n}` casos)' for reg, n in REPORT['top_3_new_cases']]),
+    #                 tests_today_string=f'`{int(REPORT["tests_today"])}`',
+    #                 tests_diff_string='`' + str(abs(int(REPORT['tests_diff']))) + ('` más' if REPORT['tests_diff'] > 0 else '` menos') + ' que ayer',
+    #             )),
+    #         ],
+    #         lg={'size': 10, 'offset': 1},
+    #         sm={'size': 12, 'offset': 0},
+    #     ),
+    # ),
 
     # ===========
     # Gráfico 1. Muertes acumuladas por región
@@ -169,7 +167,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_fallecidos_cumulativo_t',
-                    figure=fig_cache.get_fig('fallecidos_cumulativo_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=POR_MIL_HAB)
+                    figure=fig_cache.get_fig('fallecidos_cumulativo_t', yaxis_type='Lineal', value_type=POR_MIL_HAB)
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -192,7 +190,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_fallecidos_etario_t',
-                    figure=fig_cache.get_fig('fallecidos_etario_t', date_day=DATE_DAY, date_month=DATE_MONTH)
+                    figure=fig_cache.get_fig('fallecidos_etario_t')
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -231,7 +229,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_uci_t',
-                    figure=fig_cache.get_fig('uci_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=POR_MIL_HAB)
+                    figure=fig_cache.get_fig('uci_t', yaxis_type='Lineal', value_type=POR_MIL_HAB)
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -254,7 +252,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_numero_ventiladores_t',
-                    figure=fig_cache.get_fig('numero_ventiladores_t', date_day=DATE_DAY, date_month=DATE_MONTH)
+                    figure=fig_cache.get_fig('numero_ventiladores_t')
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -304,7 +302,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_casos_totales_cumulativo_t',
-                    figure=fig_cache.get_fig('casos_totales_cumulativo_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=POR_MIL_HAB)
+                    figure=fig_cache.get_fig('casos_totales_cumulativo_t', yaxis_type='Lineal', value_type=POR_MIL_HAB)
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -356,7 +354,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_pcr_t',
-                    figure=fig_cache.get_fig('pcr_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=POR_MIL_HAB)
+                    figure=fig_cache.get_fig('pcr_t', yaxis_type='Lineal', value_type=POR_MIL_HAB)
                 )
             ],
             lg={'size': 10, 'offset': 1},
@@ -381,7 +379,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_casos_nuevos_per_test',
-                    figure=fig_cache.get_fig('casos_nuevos_per_test', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal')
+                    figure=fig_cache.get_fig('casos_nuevos_per_test', yaxis_type='Lineal')
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -436,7 +434,7 @@ dash_app.layout = html.Div(className='container-fluid', children=[
 
                 dcc.Graph(
                     id='graph_p1_casos_acumulados_comuna',
-                    figure=fig_cache.get_fig('p1_casos_acumulados_comuna', date_day=DATE_DAY, date_month=DATE_MONTH, regions=[], comunas=[])
+                    figure=fig_cache.get_fig('p1_casos_acumulados_comuna', regions=[], comunas=[])
                 ),
             ],
             lg={'size': 10, 'offset': 1},
@@ -452,14 +450,14 @@ dash_app.layout = html.Div(className='container-fluid', children=[
     [Input('graph_p1_casos_acumulados_comuna-regions', 'value'),
      Input('graph_p1_casos_acumulados_comuna-comunas', 'value')])
 def update_graph_p1_casos_acumulados_comuna(regions, comunas):
-    return fig_cache.get_fig('p1_casos_acumulados_comuna', date_day=DATE_DAY, date_month=DATE_MONTH, regions=regions, comunas=comunas)
+    return fig_cache.get_fig('p1_casos_acumulados_comuna', regions=regions, comunas=comunas)
 
 
 @dash_app.callback(
     Output('graph_fallecidos_cumulativo_t', 'figure'),
     [Input('graph_fallecidos_cumulativo_t-value-type', 'value')])
 def update_graph_fallecidos_cumulativo_t(value_type):
-    return fig_cache.get_fig('fallecidos_cumulativo_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=value_type)
+    return fig_cache.get_fig('fallecidos_cumulativo_t', yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
@@ -467,28 +465,28 @@ def update_graph_fallecidos_cumulativo_t(value_type):
     [Input('graph_casos_totales_cumulativo_t-yaxis-type', 'value'),
      Input('graph_casos_totales_cumulativo_t-value-type', 'value')])
 def update_graph_casos_totales_cumulativo_t(yaxis_type, value_type):
-    return fig_cache.get_fig('casos_totales_cumulativo_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type=yaxis_type, value_type=value_type)
+    return fig_cache.get_fig('casos_totales_cumulativo_t', yaxis_type=yaxis_type, value_type=value_type)
 
 
 @dash_app.callback(
     Output('graph_casos_nuevos_cumulativo_t', 'figure'),
     [Input('graph_casos_nuevos_cumulativo_t-value-type', 'value')])
 def update_graph_casos_nuevos_cumulativo_t(value_type):
-    return fig_cache.get_fig('casos_nuevos_cumulativo_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=value_type)
+    return fig_cache.get_fig('casos_nuevos_cumulativo_t', yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
     Output('graph_pcr_t', 'figure'),
     [Input('graph_pcr_t-value-type', 'value')])
 def update_graph_pcr_t(value_type):
-    return fig_cache.get_fig('pcr_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=value_type)
+    return fig_cache.get_fig('pcr_t', yaxis_type='Lineal', value_type=value_type)
 
 
 @dash_app.callback(
     Output('graph_uci_t', 'figure'),
     [Input('graph_uci_t-value-type', 'value')])
 def update_graph_uci_t(value_type):
-    return fig_cache.get_fig('uci_t', date_day=DATE_DAY, date_month=DATE_MONTH, yaxis_type='Lineal', value_type=value_type)
+    return fig_cache.get_fig('uci_t', yaxis_type='Lineal', value_type=value_type)
 
 
 if __name__ == '__main__':
